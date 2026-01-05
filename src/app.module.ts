@@ -1,0 +1,56 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import Joi from 'joi';
+
+import { PrismaModule } from './prisma/prisma.module';
+import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
+import { RealtimeModule } from './realtime/realtime.module';
+import { QueuesModule } from './queues/queues.module';
+import { ProductsModule } from './products/products.module';
+import { CooperativesModule } from './cooperatives/cooperatives.module';
+import { UsersModule } from './users/users.module';
+import { MembersModule } from './members/members.module';
+
+import { OrdersModule } from './orders/orders.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { ApprovalsModule } from './approvals/approvals.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { RecommendationsModule } from './recommendations/recommendations.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      validationSchema: Joi.object({
+        NODE_ENV: Joi.string().valid('development', 'test', 'production').default('production'),
+        PORT: Joi.number().default(5001),
+
+        DATABASE_URL: Joi.string().required(),
+
+        JWT_SECRET: Joi.string().min(16).required(),
+        JWT_EXPIRE: Joi.string().default('7d'),
+
+        REDIS_URL: Joi.string().optional(),
+        REDIS_HOST: Joi.string().optional(),
+        REDIS_PORT: Joi.number().optional(),
+        REDIS_PASSWORD: Joi.string().allow('').optional(),
+      }).unknown(true),
+    }),
+    PrismaModule,
+    AuthModule,
+    RealtimeModule,
+    QueuesModule,
+    HealthModule,
+    ProductsModule,
+    CooperativesModule,
+    UsersModule,
+    MembersModule,
+    OrdersModule,
+    TransactionsModule,
+    ApprovalsModule,
+    ReviewsModule,
+    RecommendationsModule,
+  ],
+})
+export class AppModule { }
