@@ -19,6 +19,13 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { ContactsModule } from './contacts/contacts.module';
 
+import { AnnouncementsModule } from './announcements/announcements.module';
+import { ReportsModule } from './reports/reports.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
+import { LoyaltyModule } from './loyalty/loyalty.module';
+import { RequestsModule } from './requests/requests.module';
+import { NotificationsModule } from './notifications/notifications.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -53,6 +60,12 @@ import { ContactsModule } from './contacts/contacts.module';
     ReviewsModule,
     RecommendationsModule,
     ContactsModule,
+    AnnouncementsModule,
+    ReportsModule,
+    CampaignsModule,
+    LoyaltyModule,
+    RequestsModule,
+    NotificationsModule,
   ],
 })
 export class AppModule { }

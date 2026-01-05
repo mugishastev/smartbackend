@@ -31,23 +31,17 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    let user;
-    try {
-      user = await this.prisma.user.create({
-        data: {
-          email: dto.email,
-          password: hashedPassword,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          phone: dto.phone,
-          role: dto.role || UserRole.BUYER,
-          isActive: false, // Wait for email verification
-        },
-      });
-    } catch (e) {
-      console.error('Error creating user:', e);
-      throw e;
-    }
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        role: dto.role || UserRole.BUYER,
+        isActive: false, // Wait for email verification
+      },
+    });
 
     try {
       await OTPService.createAndSendOTP(user.id, user.email, OTPType.REGISTRATION);
