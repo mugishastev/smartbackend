@@ -17,6 +17,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { ApprovalsModule } from './approvals/approvals.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
+import { ContactsModule } from './contacts/contacts.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module'
     ApprovalsModule,
     ReviewsModule,
     RecommendationsModule,
+    ContactsModule,
   ],
 })
 export class AppModule { }
