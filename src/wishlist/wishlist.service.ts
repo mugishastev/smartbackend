@@ -1,24 +1,27 @@
-import prisma from '../config/database';
-import { ApiError } from '../lib/ApiError';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 
+@Injectable()
 export class WishlistService {
-  static async addToWishlist(userId: string, productId: string) {
+  constructor(private prisma: PrismaService) { }
+
+  async addToWishlist(userId: string, productId: string) {
     // Check if product exists
-    const product = await prisma.product.findUnique({
+    const product = await this.prisma.product.findUnique({
       where: { id: productId },
       include: { cooperative: true },
     });
 
     if (!product) {
-      throw new ApiError(404, 'Product not found');
+      throw new NotFoundException('Product not found');
     }
 
     if (!product.isActive) {
-      throw new ApiError(400, 'Product is not available');
+      throw new BadRequestException('Product is not available');
     }
 
     // Check if already in wishlist
-    const existing = await prisma.wishlist.findUnique({
+    const existing = await this.prisma.wishlist.findUnique({
       where: {
         userId_productId: {
           userId,
@@ -28,11 +31,11 @@ export class WishlistService {
     });
 
     if (existing) {
-      throw new ApiError(400, 'Product is already in your wishlist');
+      throw new BadRequestException('Product is already in your wishlist');
     }
 
     // Add to wishlist
-    const wishlistItem = await prisma.wishlist.create({
+    const wishlistItem = await this.prisma.wishlist.create({
       data: {
         userId,
         productId,
@@ -57,7 +60,7 @@ export class WishlistService {
     });
 
     // Calculate average rating
-    const ratingStats = await prisma.review.aggregate({
+    const ratingStats = await this.prisma.review.aggregate({
       where: { productId },
       _avg: { rating: true },
       _count: { rating: true },
@@ -73,8 +76,8 @@ export class WishlistService {
     };
   }
 
-  static async removeFromWishlist(userId: string, productId: string) {
-    const wishlistItem = await prisma.wishlist.findUnique({
+  async removeFromWishlist(userId: string, productId: string) {
+    const wishlistItem = await this.prisma.wishlist.findUnique({
       where: {
         userId_productId: {
           userId,
@@ -84,10 +87,10 @@ export class WishlistService {
     });
 
     if (!wishlistItem) {
-      throw new ApiError(404, 'Product not found in wishlist');
+      throw new NotFoundException('Product not found in wishlist');
     }
 
-    await prisma.wishlist.delete({
+    await this.prisma.wishlist.delete({
       where: {
         userId_productId: {
           userId,
@@ -99,7 +102,7 @@ export class WishlistService {
     return { message: 'Product removed from wishlist' };
   }
 
-  static async getUserWishlist(
+  async getUserWishlist(
     userId: string,
     page: number = 1,
     limit: number = 20
@@ -107,7 +110,7 @@ export class WishlistService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      prisma.wishlist.findMany({
+      this.prisma.wishlist.findMany({
         where: { userId },
         skip,
         take: limit,
@@ -130,13 +133,13 @@ export class WishlistService {
           },
         },
       }),
-      prisma.wishlist.count({ where: { userId } }),
+      this.prisma.wishlist.count({ where: { userId } }),
     ]);
 
     // Add average ratings to products
     const itemsWithRatings = await Promise.all(
       items.map(async (item) => {
-        const ratingStats = await prisma.review.aggregate({
+        const ratingStats = await this.prisma.review.aggregate({
           where: { productId: item.productId },
           _avg: { rating: true },
           _count: { rating: true },
@@ -162,8 +165,8 @@ export class WishlistService {
     };
   }
 
-  static async isInWishlist(userId: string, productId: string): Promise<boolean> {
-    const item = await prisma.wishlist.findUnique({
+  async isInWishlist(userId: string, productId: string): Promise<boolean> {
+    const item = await this.prisma.wishlist.findUnique({
       where: {
         userId_productId: {
           userId,
@@ -175,8 +178,8 @@ export class WishlistService {
     return !!item;
   }
 
-  static async getWishlistCount(userId: string): Promise<number> {
-    return prisma.wishlist.count({
+  async getWishlistCount(userId: string): Promise<number> {
+    return this.prisma.wishlist.count({
       where: { userId },
     });
   }
