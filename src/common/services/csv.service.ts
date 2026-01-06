@@ -1,10 +1,11 @@
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import csv from 'csv-parser';
 import { Readable } from 'stream';
 import bcrypt from 'bcryptjs';
-import prisma from '../config/database';
-import { EmailService } from './email.service';
-import { config } from '../config';
 import crypto from 'crypto';
+import { PrismaService } from '../../prisma/prisma.service';
+import { EmailService } from './email.service';
+import { config } from '../../config';
 
 interface CSVMember {
   firstName: string;
@@ -20,8 +21,14 @@ export interface ImportResult {
   errors: Array<{ row: number; email: string; error: string }>;
 }
 
+@Injectable()
 export class CSVService {
-  static async parseCSV(buffer: Buffer): Promise<CSVMember[]> {
+  constructor(
+    private prisma: PrismaService,
+    private emailService: EmailService
+  ) { }
+
+  async parseCSV(buffer: Buffer): Promise<CSVMember[]> {
     return new Promise((resolve, reject) => {
       const results: CSVMember[] = [];
       const stream = Readable.from(buffer);
@@ -50,7 +57,7 @@ export class CSVService {
     });
   }
 
-  static async importMembers(
+  async importMembers(
     cooperativeId: string,
     invitedBy: string,
     csvBuffer: Buffer
@@ -63,13 +70,13 @@ export class CSVService {
     };
 
     // Get cooperative details
-    const cooperative = await prisma.cooperative.findUnique({
+    const cooperative = await this.prisma.cooperative.findUnique({
       where: { id: cooperativeId },
       select: { name: true },
     });
 
     if (!cooperative) {
-      throw new Error('Cooperative not found');
+      throw new NotFoundException('Cooperative not found');
     }
 
     for (let i = 0; i < members.length; i++) {
@@ -77,7 +84,7 @@ export class CSVService {
 
       try {
         // Check if user already exists
-        const existingUser = await prisma.user.findUnique({
+        const existingUser = await this.prisma.user.findUnique({
           where: { email: member.email },
         });
 
@@ -111,7 +118,7 @@ export class CSVService {
         expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
         // Create invitation
-        await prisma.invitation.create({
+        await this.prisma.invitation.create({
           data: {
             email: member.email,
             cooperativeId,
@@ -124,7 +131,7 @@ export class CSVService {
 
         // Send invitation email
         const inviteLink = `${config.frontend.url}/accept-invitation?token=${token}`;
-        await EmailService.sendInvitationEmail(
+        await this.emailService.sendInvitationEmail(
           member.email,
           cooperative.name,
           member.role,
@@ -145,30 +152,30 @@ export class CSVService {
     return result;
   }
 
-  static async acceptInvitation(
+  async acceptInvitation(
     token: string,
     password: string,
     additionalData?: { phone?: string; avatar?: string }
   ): Promise<any> {
     // Find invitation
-    const invitation = await prisma.invitation.findUnique({
+    const invitation = await this.prisma.invitation.findUnique({
       where: { token },
     });
 
     if (!invitation) {
-      throw new Error('Invalid invitation token');
+      throw new BadRequestException('Invalid invitation token');
     }
 
     if (invitation.usedAt) {
-      throw new Error('Invitation already used');
+      throw new BadRequestException('Invitation already used');
     }
 
     if (new Date() > invitation.expiresAt) {
-      throw new Error('Invitation has expired');
+      throw new BadRequestException('Invitation has expired');
     }
 
     // Check if user already exists
-    let user = await prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { email: invitation.email },
     });
 
@@ -176,7 +183,7 @@ export class CSVService {
 
     if (user) {
       // Update existing user
-      user = await prisma.user.update({
+      user = await this.prisma.user.update({
         where: { id: user.id },
         data: {
           password: hashedPassword,
@@ -191,7 +198,7 @@ export class CSVService {
       // Create new user (extract name from email if not provided)
       const [firstName, lastName] = invitation.email.split('@')[0].split('.');
 
-      user = await prisma.user.create({
+      user = await this.prisma.user.create({
         data: {
           email: invitation.email,
           password: hashedPassword,
@@ -208,13 +215,13 @@ export class CSVService {
     }
 
     // Mark invitation as used
-    await prisma.invitation.update({
+    await this.prisma.invitation.update({
       where: { id: invitation.id },
       data: { usedAt: new Date() },
     });
 
     // Update cooperative member count
-    await prisma.cooperative.update({
+    await this.prisma.cooperative.update({
       where: { id: invitation.cooperativeId },
       data: {
         totalMembers: {
@@ -224,10 +231,10 @@ export class CSVService {
     });
 
     // Send welcome email
-    await EmailService.sendWelcomeEmail(user.email, user.firstName);
+    await this.emailService.sendWelcomeEmail(user.email, user.firstName);
 
     // Log activity
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
         userId: user.id,
         cooperativeId: invitation.cooperativeId,

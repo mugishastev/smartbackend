@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
-import { EmailService } from '../services/email.service';
+import { EmailService } from '../common/services/email.service';
 import { config } from '../config';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly emailService: EmailService,
+  ) { }
 
   async createNotification(params: {
     recipientId: string;
@@ -57,7 +60,7 @@ export class NotificationsService {
 
     if (user.email) {
       try {
-        await EmailService.sendNotificationEmail(
+        await this.emailService.sendNotificationEmail(
           user.email,
           title,
           `<p>Hi ${user.firstName},</p><p>${message}</p><p>Log in to continue the conversation.</p>`

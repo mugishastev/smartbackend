@@ -26,6 +26,7 @@ import { LoyaltyModule } from './loyalty/loyalty.module';
 import { RequestsModule } from './requests/requests.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
+import { CommonModule } from './common/common.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
@@ -70,6 +71,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
     NotificationsModule,
     ChatModule,
     WishlistModule,
+    CommonModule,
   ],
 })
 export class AppModule { }

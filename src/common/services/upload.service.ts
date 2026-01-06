@@ -1,12 +1,23 @@
-import cloudinary from '../config/cloudinary';
-import { UploadApiResponse } from 'cloudinary';
+import { Injectable } from '@nestjs/common';
+import { UploadApiResponse, v2 as cloudinary } from 'cloudinary';
+import { config } from '../../config';
 
-type UploadedFile = {
+// Configure Cloudinary globally or inject config service if preferred
+cloudinary.config({
+  cloud_name: config.cloudinary.cloudName,
+  api_key: config.cloudinary.apiKey,
+  api_secret: config.cloudinary.apiSecret,
+});
+
+export type UploadedFile = {
   buffer: Buffer;
+  originalname?: string;
+  mimetype?: string;
 };
 
+@Injectable()
 export class UploadService {
-  static async uploadImage(
+  async uploadImage(
     file: UploadedFile,
     folder: string = 'smart-coop-hub'
   ): Promise<string> {
@@ -33,7 +44,7 @@ export class UploadService {
     });
   }
 
-  static async uploadMultipleImages(
+  async uploadMultipleImages(
     files: UploadedFile[],
     folder: string = 'smart-coop-hub'
   ): Promise<string[]> {
@@ -41,7 +52,7 @@ export class UploadService {
     return Promise.all(uploadPromises);
   }
 
-  static async uploadDocument(
+  async uploadDocument(
     file: UploadedFile,
     folder: string = 'smart-coop-hub/documents'
   ): Promise<string> {
@@ -65,7 +76,7 @@ export class UploadService {
     });
   }
 
-  static async deleteImage(url: string): Promise<void> {
+  async deleteImage(url: string): Promise<void> {
     try {
       // Extract public_id from Cloudinary URL
       const parts = url.split('/');
@@ -79,7 +90,7 @@ export class UploadService {
     }
   }
 
-  static async uploadSingleFile(
+  async uploadSingleFile(
     file: UploadedFile,
     folder: string = 'smart-coop-hub/files'
   ): Promise<string> {

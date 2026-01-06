@@ -1,24 +1,39 @@
+import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
-import { config } from '../config';
-import { OTPType } from '../lib/enums';
+import { config } from '../../config';
 
-const transporter = nodemailer.createTransport({
-  host: config.email.host,
-  port: config.email.port,
-  secure: false,
-  auth: {
-    user: config.email.user,
-    pass: config.email.password,
-  },
-});
+export enum OTPType {
+  REGISTRATION = 'REGISTRATION',
+  PASSWORD_RESET = 'PASSWORD_RESET',
+  LOGIN = 'LOGIN',
+  VERIFICATION = 'VERIFICATION'
+}
 
+@Injectable()
 export class EmailService {
-  static async sendOTP(email: string, otp: string, type: OTPType): Promise<void> {
+  private transporter;
+
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      host: config.email.host,
+      port: config.email.port,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: config.email.user,
+        pass: config.email.password,
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+
+  async sendOTP(email: string, otp: string, type: OTPType): Promise<void> {
     const subject = type === OTPType.REGISTRATION
       ? 'Verify Your Email - Smart Coop Hub'
       : type === OTPType.PASSWORD_RESET
-      ? 'Reset Your Password - Smart Coop Hub'
-      : 'Your OTP Code - Smart Coop Hub';
+        ? 'Reset Your Password - Smart Coop Hub'
+        : 'Your OTP Code - Smart Coop Hub';
 
     const html = `
       <!DOCTYPE html>
@@ -42,7 +57,7 @@ export class EmailService {
               <h2>Your OTP Code</h2>
               <p>Use the following code to complete your verification:</p>
               <div class="otp">${otp}</div>
-              <p>This code will expire in ${config.otp.expiryMinutes} minutes.</p>
+              <p>This code will expire in ${config.otp.expiryMinutes || 10} minutes.</p>
               <p>If you didn't request this code, please ignore this email.</p>
             </div>
             <div class="footer">
@@ -53,7 +68,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject,
@@ -61,7 +76,7 @@ export class EmailService {
     });
   }
 
-  static async sendWelcomeEmail(email: string, name: string): Promise<void> {
+  async sendWelcomeEmail(email: string, name: string): Promise<void> {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -101,7 +116,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: 'Welcome to Smart Coop Hub!',
@@ -109,7 +124,7 @@ export class EmailService {
     });
   }
 
-  static async sendInvitationEmail(
+  async sendInvitationEmail(
     email: string,
     cooperativeName: string,
     role: string,
@@ -154,7 +169,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: `Invitation to Join ${cooperativeName} - Smart Coop Hub`,
@@ -162,7 +177,7 @@ export class EmailService {
     });
   }
 
-  static async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
+  async sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -196,7 +211,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: 'Password Reset - Smart Coop Hub',
@@ -204,7 +219,7 @@ export class EmailService {
     });
   }
 
-  static async sendContactConfirmationEmail(email: string, name: string): Promise<void> {
+  async sendContactConfirmationEmail(email: string, name: string): Promise<void> {
     const html = `
       <!DOCTYPE html>
       <html>
@@ -244,7 +259,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: 'Contact Received - Smart Coop Hub',
@@ -252,7 +267,7 @@ export class EmailService {
     });
   }
 
-  static async sendContactResponseEmail(
+  async sendContactResponseEmail(
     email: string,
     name: string,
     originalMessage: string,
@@ -302,7 +317,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: 'Reply from Smart Coop Hub Support',
@@ -310,7 +325,7 @@ export class EmailService {
     });
   }
 
-  static async sendAdminCredentials(
+  async sendAdminCredentials(
     email: string,
     firstName: string,
     cooperativeName: string,
@@ -390,7 +405,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: `${cooperativeName} Approved - Your Admin Credentials`,
@@ -398,7 +413,7 @@ export class EmailService {
     });
   }
 
-  static async sendMemberCredentials(
+  async sendMemberCredentials(
     email: string,
     firstName: string,
     cooperativeName: string,
@@ -486,7 +501,7 @@ export class EmailService {
       </html>
     `;
 
-    await transporter.sendMail({
+    await this.transporter.sendMail({
       from: config.email.from,
       to: email,
       subject: `Welcome to ${cooperativeName} - Your Member Credentials`,
@@ -494,8 +509,8 @@ export class EmailService {
     });
   }
 
-  static async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
-    await transporter.sendMail({
+  async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
+    await this.transporter.sendMail({
       from: config.email.from,
       to,
       subject,
