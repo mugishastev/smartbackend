@@ -26,6 +26,7 @@ import { LoyaltyModule } from './loyalty/loyalty.module';
 import { RequestsModule } from './requests/requests.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
+import { WishlistModule } from './wishlist/wishlist.module';
 
 @Module({
   imports: [
@@ -68,6 +69,7 @@ import { ChatModule } from './chat/chat.module';
     RequestsModule,
     NotificationsModule,
     ChatModule,
+    WishlistModule,
   ],
 })
 export class AppModule { }
