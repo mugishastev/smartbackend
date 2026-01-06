@@ -1,21 +1,16 @@
-import prisma from '../config/database';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { ApiError } from '../lib/ApiError';
-import { NotificationService } from './notification.service';
 
-export interface ConversationFilter {
-  buyerId?: string;
-  cooperativeId?: string;
-  orderId?: string;
-}
-
-interface CreateConversationPayload {
+export interface CreateConversationPayload {
   buyerId: string;
   cooperativeId: string;
   subject?: string;
   orderId?: string;
 }
 
-interface SendChatMessagePayload {
+export interface SendChatMessagePayload {
   conversationId: string;
   senderId: string;
   receiverId: string;
@@ -23,9 +18,15 @@ interface SendChatMessagePayload {
   attachments?: string[];
 }
 
+@Injectable()
 export class ChatService {
-  static async ensureConversation(payload: CreateConversationPayload) {
-    const existing = await prisma.chatConversation.findFirst({
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService
+  ) { }
+
+  async ensureConversation(payload: CreateConversationPayload) {
+    const existing = await this.prisma.chatConversation.findFirst({
       where: {
         buyerId: payload.buyerId,
         cooperativeId: payload.cooperativeId,
@@ -35,7 +36,7 @@ export class ChatService {
 
     if (existing) return existing;
 
-    return prisma.chatConversation.create({
+    return this.prisma.chatConversation.create({
       data: {
         buyerId: payload.buyerId,
         cooperativeId: payload.cooperativeId,
@@ -45,7 +46,7 @@ export class ChatService {
     });
   }
 
-  static async listConversationsForUser(filter: {
+  async listConversationsForUser(filter: {
     userId: string;
     role: string;
     cooperativeId?: string;
@@ -61,7 +62,7 @@ export class ChatService {
       throw new ApiError(400, 'Unable to resolve conversations for this user');
     }
 
-    return prisma.chatConversation.findMany({
+    return this.prisma.chatConversation.findMany({
       where: whereClause,
       include: {
         messages: {
@@ -75,11 +76,11 @@ export class ChatService {
     });
   }
 
-  static async getConversationMessages(
+  async getConversationMessages(
     conversationId: string,
     options: { userId: string; role?: string; cooperativeId?: string }
   ) {
-    const conversation = await prisma.chatConversation.findUnique({
+    const conversation = await this.prisma.chatConversation.findUnique({
       where: { id: conversationId },
       include: {
         messages: {
@@ -114,8 +115,8 @@ export class ChatService {
     return conversation.messages;
   }
 
-  static async sendMessage(payload: SendChatMessagePayload) {
-    const conversation = await prisma.chatConversation.findUnique({
+  async sendMessage(payload: SendChatMessagePayload) {
+    const conversation = await this.prisma.chatConversation.findUnique({
       where: { id: payload.conversationId },
       include: {
         buyer: true,
@@ -127,7 +128,7 @@ export class ChatService {
       throw new ApiError(404, 'Conversation not found');
     }
 
-    const sender = await prisma.user.findUnique({
+    const sender = await this.prisma.user.findUnique({
       where: { id: payload.senderId },
       select: { cooperativeId: true },
     });
@@ -141,7 +142,7 @@ export class ChatService {
       throw new ApiError(403, 'Sender not part of the conversation');
     }
 
-    const receiver = await prisma.user.findUnique({
+    const receiver = await this.prisma.user.findUnique({
       where: { id: payload.receiverId },
       select: { id: true, cooperativeId: true },
     });
@@ -153,7 +154,7 @@ export class ChatService {
       throw new ApiError(400, 'Receiver is not part of this conversation');
     }
 
-    const message = await prisma.chatMessage.create({
+    const message = await this.prisma.chatMessage.create({
       data: {
         conversationId: payload.conversationId,
         senderId: payload.senderId,
@@ -162,7 +163,7 @@ export class ChatService {
       },
     });
 
-    await prisma.chatConversation.update({
+    await this.prisma.chatConversation.update({
       where: { id: payload.conversationId },
       data: {
         lastMessageAt: new Date(),
@@ -170,7 +171,7 @@ export class ChatService {
       },
     });
 
-    await NotificationService.sendChatNotification(
+    await this.notificationsService.sendChatNotification(
       payload.receiverId,
       payload.content,
       conversation.subject ?? 'New message'
@@ -178,6 +179,5 @@ export class ChatService {
 
     return message;
   }
-
 }
 

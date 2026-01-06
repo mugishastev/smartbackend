@@ -25,6 +25,7 @@ import { CampaignsModule } from './campaigns/campaigns.module';
 import { LoyaltyModule } from './loyalty/loyalty.module';
 import { RequestsModule } from './requests/requests.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     LoyaltyModule,
     RequestsModule,
     NotificationsModule,
+    ChatModule,
   ],
 })
 export class AppModule { }
