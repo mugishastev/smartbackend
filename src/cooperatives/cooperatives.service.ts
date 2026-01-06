@@ -6,8 +6,8 @@ import { ApproveCooperativeDto } from './dto/approve-cooperative.dto';
 import { CreateCooperativeAdminDto } from './dto/create-admin.dto';
 import { CooperativeActionDto } from './dto/cooperative-action.dto';
 import { CooperativeQueryDto } from './dto/cooperative-query.dto';
-import { UploadService } from '../services/upload.service';
-import { EmailService } from '../services/email.service';
+import { UploadService } from '../common/services/upload.service';
+import { EmailService } from '../common/services/email.service';
 import { UserRole, Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 

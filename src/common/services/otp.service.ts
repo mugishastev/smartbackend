@@ -1,7 +1,7 @@
-import prisma from '../config/database';
-import { config } from '../config';
+import prisma from '../../config/database';
+import { config } from '../../config';
 import { EmailService } from './email.service';
-import { OTPType } from '../lib/enums';
+import { OTPType } from '../../lib/enums';
 
 export class OTPService {
   static generateOTP(): string {
@@ -15,7 +15,7 @@ export class OTPService {
   ): Promise<string> {
     // Generate OTP
     const code = this.generateOTP();
-    
+
     // Calculate expiry
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + config.otp.expiryMinutes);

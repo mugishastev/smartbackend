@@ -28,6 +28,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { ChatModule } from './chat/chat.module';
 import { CommonModule } from './common/common.module';
 import { WishlistModule } from './wishlist/wishlist.module';
+import { AdminModule } from './admin/admin.module';
+import { JobApplicationsModule } from './job-applications/job-applications.module';
+import { ReturnsModule } from './returns/returns.module';
 
 @Module({
   imports: [
@@ -72,6 +75,9 @@ import { WishlistModule } from './wishlist/wishlist.module';
     ChatModule,
     WishlistModule,
     CommonModule,
+    AdminModule,
+    JobApplicationsModule,
+    ReturnsModule,
   ],
 })
 export class AppModule { }

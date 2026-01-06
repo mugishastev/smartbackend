@@ -3,8 +3,8 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import crypto from 'crypto';
 import { addSeconds, isBefore } from 'date-fns';
-import { config } from '../config';
-import { ApiError } from '../lib/ApiError';
+import { config } from '../../config';
+import { ApiError } from '../../lib/ApiError';
 
 // A minimal, self-contained logger for this service
 const logger = {

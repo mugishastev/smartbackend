@@ -8,8 +8,8 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import bcrypt from 'bcryptjs';
-import { OTPService } from '../services/otp.service';
-import { EmailService } from '../services/email.service';
+import { OTPService } from '../common/services/otp.service';
+import { EmailService } from '../common/services/email.service';
 import { OTPType } from '../lib/enums';
 import { UserRole } from '@prisma/client';
 

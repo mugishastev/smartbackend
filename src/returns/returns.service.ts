@@ -1,8 +1,12 @@
-import prisma from '../config/database';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
 
+@Injectable()
 export class ReturnService {
-  static async createReturnRequest(
+  constructor(private readonly prisma: PrismaService) { }
+
+  async createReturnRequest(
     buyerId: string,
     orderId: string,
     productId: string,
@@ -11,8 +15,7 @@ export class ReturnService {
     description?: string,
     images?: string[]
   ) {
-    // Verify order exists and belongs to buyer
-    const order = await prisma.order.findUnique({
+    const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: {
         items: {
@@ -29,8 +32,7 @@ export class ReturnService {
       throw new ApiError(403, 'You can only return items from your own orders');
     }
 
-    // Check if order is eligible for return (delivered within last 30 days)
-    const daysSinceDelivery = order.status === 'DELIVERED' 
+    const daysSinceDelivery = order.status === 'DELIVERED'
       ? Math.floor((Date.now() - order.updatedAt.getTime()) / (1000 * 60 * 60 * 24))
       : -1;
 
@@ -42,7 +44,6 @@ export class ReturnService {
       throw new ApiError(400, 'Return period has expired. Returns must be requested within 30 days of delivery');
     }
 
-    // Verify product is in the order
     const orderItem = order.items.find(
       item => item.productId === productId && (orderItemId ? item.id === orderItemId : true)
     );
@@ -51,8 +52,7 @@ export class ReturnService {
       throw new ApiError(404, 'Product not found in this order');
     }
 
-    // Check if return already exists for this order item
-    const existingReturn = await prisma.returnRequest.findFirst({
+    const existingReturn = await this.prisma.returnRequest.findFirst({
       where: {
         orderId,
         productId,
@@ -65,11 +65,9 @@ export class ReturnService {
       throw new ApiError(400, 'A return request already exists for this item');
     }
 
-    // Calculate refund amount (full item price)
     const refundAmount = orderItem.subtotal;
 
-    // Create return request
-    const returnRequest = await prisma.returnRequest.create({
+    const returnRequest = await this.prisma.returnRequest.create({
       data: {
         orderId,
         buyerId,
@@ -108,8 +106,7 @@ export class ReturnService {
       },
     });
 
-    // Log activity
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
         userId: buyerId,
         action: 'RETURN_REQUESTED',
@@ -127,7 +124,7 @@ export class ReturnService {
     return returnRequest;
   }
 
-  static async getReturnRequests(
+  async getReturnRequests(
     userId: string,
     role: string,
     cooperativeId?: string,
@@ -135,20 +132,16 @@ export class ReturnService {
     limit: number = 20
   ) {
     const skip = (page - 1) * limit;
-
     const where: any = {};
 
-    // Buyers see only their returns
     if (role === 'BUYER') {
       where.buyerId = userId;
-    }
-    // Cooperative admins see returns for their products
-    else if (cooperativeId && (role === 'COOP_ADMIN' || role === 'SECRETARY')) {
+    } else if (cooperativeId && (role === 'COOP_ADMIN' || role === 'SECRETARY')) {
       where.product = { cooperativeId };
     }
 
     const [returns, total] = await Promise.all([
-      prisma.returnRequest.findMany({
+      this.prisma.returnRequest.findMany({
         where,
         skip,
         take: limit,
@@ -184,7 +177,7 @@ export class ReturnService {
           },
         },
       }),
-      prisma.returnRequest.count({ where }),
+      this.prisma.returnRequest.count({ where }),
     ]);
 
     return {
@@ -196,8 +189,8 @@ export class ReturnService {
     };
   }
 
-  static async getReturnRequestById(returnId: string, userId: string, role: string) {
-    const returnRequest = await prisma.returnRequest.findUnique({
+  async getReturnRequestById(returnId: string, userId: string, role: string) {
+    const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
       include: {
         buyer: {
@@ -234,7 +227,6 @@ export class ReturnService {
       throw new ApiError(404, 'Return request not found');
     }
 
-    // Check access
     if (role === 'BUYER' && returnRequest.buyerId !== userId) {
       throw new ApiError(403, 'Access denied');
     }
@@ -242,13 +234,13 @@ export class ReturnService {
     return returnRequest;
   }
 
-  static async approveReturn(
+  async approveReturn(
     returnId: string,
     processedBy: string,
     role: string,
     cooperativeId?: string
   ) {
-    const returnRequest = await prisma.returnRequest.findUnique({
+    const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
       include: {
         product: {
@@ -266,7 +258,6 @@ export class ReturnService {
       throw new ApiError(400, `Return request is already ${returnRequest.status}`);
     }
 
-    // Check authorization
     if (role !== 'COOP_ADMIN' && role !== 'SECRETARY' && role !== 'SUPER_ADMIN') {
       throw new ApiError(403, 'Not authorized to approve returns');
     }
@@ -277,8 +268,7 @@ export class ReturnService {
       }
     }
 
-    // Update return status
-    const updatedReturn = await prisma.returnRequest.update({
+    const updatedReturn = await this.prisma.returnRequest.update({
       where: { id: returnId },
       data: {
         status: 'APPROVED',
@@ -292,26 +282,24 @@ export class ReturnService {
       },
     });
 
-    // Restore product stock
     const orderItem =
       returnRequest.orderItemId
-        ? await prisma.orderItem.findUnique({
-            where: { id: returnRequest.orderItemId },
-            select: { quantity: true },
-          })
+        ? await this.prisma.orderItem.findUnique({
+          where: { id: returnRequest.orderItemId },
+          select: { quantity: true },
+        })
         : null;
 
     const restockQuantity = orderItem?.quantity || 1;
 
-    await prisma.product.update({
+    await this.prisma.product.update({
       where: { id: returnRequest.productId },
       data: {
         availableStock: { increment: restockQuantity },
       },
     });
 
-    // Log activity
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
         userId: processedBy,
         cooperativeId: returnRequest.product.cooperativeId,
@@ -328,13 +316,13 @@ export class ReturnService {
     return updatedReturn;
   }
 
-  static async rejectReturn(
+  async rejectReturn(
     returnId: string,
     processedBy: string,
     rejectionReason: string,
     role: string
   ) {
-    const returnRequest = await prisma.returnRequest.findUnique({
+    const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
     });
 
@@ -346,7 +334,7 @@ export class ReturnService {
       throw new ApiError(400, `Return request is already ${returnRequest.status}`);
     }
 
-    const updatedReturn = await prisma.returnRequest.update({
+    const updatedReturn = await this.prisma.returnRequest.update({
       where: { id: returnId },
       data: {
         status: 'REJECTED',
@@ -361,7 +349,7 @@ export class ReturnService {
       },
     });
 
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
         userId: processedBy,
         action: 'RETURN_REJECTED',
@@ -374,12 +362,12 @@ export class ReturnService {
     return updatedReturn;
   }
 
-  static async processRefund(
+  async processRefund(
     returnId: string,
     refundRef: string,
     processedBy: string
   ) {
-    const returnRequest = await prisma.returnRequest.findUnique({
+    const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
     });
 
@@ -391,7 +379,7 @@ export class ReturnService {
       throw new ApiError(400, 'Return must be approved before processing refund');
     }
 
-    const updatedReturn = await prisma.returnRequest.update({
+    const updatedReturn = await this.prisma.returnRequest.update({
       where: { id: returnId },
       data: {
         status: 'REFUNDED',
@@ -406,7 +394,7 @@ export class ReturnService {
       },
     });
 
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
         userId: processedBy,
         action: 'REFUND_PROCESSED',
@@ -422,8 +410,8 @@ export class ReturnService {
     return updatedReturn;
   }
 
-  static async cancelReturn(returnId: string, userId: string) {
-    const returnRequest = await prisma.returnRequest.findUnique({
+  async cancelReturn(returnId: string, userId: string) {
+    const returnRequest = await this.prisma.returnRequest.findUnique({
       where: { id: returnId },
     });
 
@@ -439,7 +427,7 @@ export class ReturnService {
       throw new ApiError(400, 'Cannot cancel return request in current status');
     }
 
-    const updatedReturn = await prisma.returnRequest.update({
+    const updatedReturn = await this.prisma.returnRequest.update({
       where: { id: returnId },
       data: {
         status: 'CANCELLED',
@@ -449,4 +437,5 @@ export class ReturnService {
     return updatedReturn;
   }
 }
+
 

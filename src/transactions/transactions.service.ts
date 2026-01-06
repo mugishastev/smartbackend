@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 import { ApprovalsService } from '../approvals/approvals.service';
-import { blockchainService } from '../services/blockchain.service';
+import { blockchainService } from '../common/services/blockchain.service';
 import { UserRole, TransactionStatus, TransactionType } from '../lib/enums';
 
 @Injectable()

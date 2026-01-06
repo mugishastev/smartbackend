@@ -1,5 +1,5 @@
-import prisma from '../config/database';
-import { ApiError } from '../lib/ApiError';
+import prisma from '../../config/database';
+import { ApiError } from '../../lib/ApiError';
 
 export interface ShippingCalculation {
   method: string;
@@ -53,7 +53,7 @@ export class ShippingService {
 
     // Calculate base cost
     const baseCost = this.BASE_RATE + (distance * this.PER_KM_RATE) + (totalWeight * this.PER_KG_RATE);
-    
+
     // Calculate costs for different shipping methods
     const standardCost = Math.round(baseCost);
     const expressCost = Math.round(baseCost * 1.5);
@@ -105,10 +105,10 @@ export class ShippingService {
 
     // // Same region
     // if (fromRegion && toRegion && fromRegion === toRegion) return 50;
-    
+
     // // Different regions
     // if (fromRegion && toRegion && fromRegion !== toRegion) return 150;
-    
+
     // Default distance
     return 100;
   }

@@ -7,7 +7,7 @@ import { RefundDto } from './dto/refund.dto';
 import { OrderQueryDto } from './dto/order-query.dto';
 import { User, UserRole, OrderStatus } from '@prisma/client';
 import { PaymentMethod } from '../lib/enums';
-import { paypackService } from '../services/paypack.service';
+import { paypackService } from '../common/services/paypack.service';
 import { OTPType } from '../lib/enums';
 
 

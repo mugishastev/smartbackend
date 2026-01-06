@@ -1,9 +1,12 @@
-import prisma from '../config/database';
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
-import { UploadService } from './upload.service';
 
+@Injectable()
 export class JobApplicationService {
-  static async createApplication(
+  constructor(private readonly prisma: PrismaService) { }
+
+  async createApplication(
     announcementId: string,
     applicationData: {
       applicantName: string;
@@ -13,8 +16,7 @@ export class JobApplicationService {
       coverLetter?: string;
     }
   ) {
-    // Check if announcement exists and is a job posting
-    const announcement = await prisma.announcement.findUnique({
+    const announcement = await this.prisma.announcement.findUnique({
       where: { id: announcementId },
     });
 
@@ -26,13 +28,11 @@ export class JobApplicationService {
       throw new ApiError(400, 'This announcement is not a job posting');
     }
 
-    // Check if announcement has expired
     if (announcement.expiresAt && announcement.expiresAt < new Date()) {
       throw new ApiError(400, 'This job posting has expired');
     }
 
-    // Check if user already applied
-    const existingApplication = await prisma.jobApplication.findFirst({
+    const existingApplication = await this.prisma.jobApplication.findFirst({
       where: {
         announcementId,
         applicantEmail: applicationData.applicantEmail,
@@ -43,7 +43,7 @@ export class JobApplicationService {
       throw new ApiError(400, 'You have already applied for this job');
     }
 
-    const application = await prisma.jobApplication.create({
+    const application = await this.prisma.jobApplication.create({
       data: {
         announcementId,
         ...applicationData,
@@ -65,11 +65,10 @@ export class JobApplicationService {
       },
     });
 
-    // Log activity if cooperative exists
     if (announcement.cooperativeId) {
-      await prisma.activityLog.create({
+      await this.prisma.activityLog.create({
         data: {
-          userId: 'system', // System-generated application
+          userId: 'system',
           cooperativeId: announcement.cooperativeId,
           action: 'JOB_APPLICATION_RECEIVED',
           entity: 'JOB_APPLICATION',
@@ -86,8 +85,8 @@ export class JobApplicationService {
     return application;
   }
 
-  static async getApplicationsByAnnouncement(announcementId: string, cooperativeId?: string) {
-    const announcement = await prisma.announcement.findUnique({
+  async getApplicationsByAnnouncement(announcementId: string, cooperativeId?: string) {
+    const announcement = await this.prisma.announcement.findUnique({
       where: { id: announcementId },
     });
 
@@ -95,12 +94,11 @@ export class JobApplicationService {
       throw new ApiError(404, 'Announcement not found');
     }
 
-    // Check authorization
     if (cooperativeId && announcement.cooperativeId !== cooperativeId) {
       throw new ApiError(403, 'Not authorized to view applications for this announcement');
     }
 
-    const applications = await prisma.jobApplication.findMany({
+    const applications = await this.prisma.jobApplication.findMany({
       where: { announcementId },
       include: {
         announcement: {
@@ -122,8 +120,8 @@ export class JobApplicationService {
     return applications;
   }
 
-  static async getApplicationsByCooperative(cooperativeId: string) {
-    const applications = await prisma.jobApplication.findMany({
+  async getApplicationsByCooperative(cooperativeId: string) {
+    const applications = await this.prisma.jobApplication.findMany({
       where: {
         announcement: {
           cooperativeId,
@@ -146,12 +144,12 @@ export class JobApplicationService {
     return applications;
   }
 
-  static async updateApplicationStatus(
+  async updateApplicationStatus(
     applicationId: string,
     status: string,
     cooperativeId: string
   ) {
-    const application = await prisma.jobApplication.findUnique({
+    const application = await this.prisma.jobApplication.findUnique({
       where: { id: applicationId },
       include: {
         announcement: true,
@@ -171,7 +169,7 @@ export class JobApplicationService {
       throw new ApiError(400, 'Invalid status');
     }
 
-    const updatedApplication = await prisma.jobApplication.update({
+    const updatedApplication = await this.prisma.jobApplication.update({
       where: { id: applicationId },
       data: { status },
       include: {
@@ -190,10 +188,9 @@ export class JobApplicationService {
       },
     });
 
-    // Log activity
-    await prisma.activityLog.create({
+    await this.prisma.activityLog.create({
       data: {
-        userId: 'system', // System-generated update
+        userId: 'system',
         cooperativeId,
         action: 'JOB_APPLICATION_STATUS_UPDATED',
         entity: 'JOB_APPLICATION',
@@ -205,8 +202,8 @@ export class JobApplicationService {
     return updatedApplication;
   }
 
-  static async getApplicationById(applicationId: string) {
-    const application = await prisma.jobApplication.findUnique({
+  async getApplicationById(applicationId: string) {
+    const application = await this.prisma.jobApplication.findUnique({
       where: { id: applicationId },
       include: {
         announcement: {
@@ -234,8 +231,8 @@ export class JobApplicationService {
     return application;
   }
 
-  static async deleteApplication(applicationId: string, cooperativeId: string) {
-    const application = await prisma.jobApplication.findUnique({
+  async deleteApplication(applicationId: string, cooperativeId: string) {
+    const application = await this.prisma.jobApplication.findUnique({
       where: { id: applicationId },
       include: {
         announcement: true,
@@ -250,10 +247,11 @@ export class JobApplicationService {
       throw new ApiError(403, 'Not authorized to delete this application');
     }
 
-    await prisma.jobApplication.delete({
+    await this.prisma.jobApplication.delete({
       where: { id: applicationId },
     });
 
     return { message: 'Application deleted successfully' };
   }
 }
+

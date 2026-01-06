@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
-import { blockchainService } from '../services/blockchain.service';
+import { blockchainService } from '../common/services/blockchain.service';
 import { Report, Transaction, User, MemberFinancial } from '@prisma/client';
 
 @Injectable()
