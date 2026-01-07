@@ -31,6 +31,7 @@ import { WishlistModule } from './wishlist/wishlist.module';
 import { AdminModule } from './admin/admin.module';
 import { JobApplicationsModule } from './job-applications/job-applications.module';
 import { ReturnsModule } from './returns/returns.module';
+import { BuyerModule } from './buyer/buyer.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { ReturnsModule } from './returns/returns.module';
     AdminModule,
     JobApplicationsModule,
     ReturnsModule,
+    BuyerModule,
   ],
 })
 export class AppModule { }

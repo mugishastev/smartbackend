@@ -20,7 +20,7 @@ import { ProductQueryDto } from './dto/product-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-// import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nest-lab/fastify-multer';
 import { UserRole } from '@prisma/client';
 
 @Controller('products')
@@ -30,11 +30,11 @@ export class ProductsController {
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.COOP_ADMIN, UserRole.SECRETARY)
-    // @UseInterceptors(FilesInterceptor('images', 5))
+    @UseInterceptors(FilesInterceptor('images', 5))
     create(
         @Body() createProductDto: CreateProductDto,
         @Req() req: any,
-        /* @UploadedFiles() */ files?: any[],
+        @UploadedFiles() files?: any[],
     ) {
         return this.productsService.create(createProductDto, req.user, files);
     }
@@ -57,12 +57,12 @@ export class ProductsController {
     @Put(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.COOP_ADMIN, UserRole.SECRETARY)
-    // @UseInterceptors(FilesInterceptor('images', 5))
+    @UseInterceptors(FilesInterceptor('images', 5))
     update(
         @Param('id') id: string,
         @Body() updateProductDto: UpdateProductDto,
         @Req() req: any,
-        /* @UploadedFiles() */ files?: any[],
+        @UploadedFiles() files?: any[],
     ) {
         return this.productsService.update(id, updateProductDto, req.user, files);
     }

@@ -11,7 +11,7 @@ import {
     Query,
     Req,
 } from '@nestjs/common';
-// import { FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nest-lab/fastify-multer';
 import { CooperativesService } from './cooperatives.service';
 import { RegisterCooperativeDto } from './dto/register-cooperative.dto';
 import { UpdateCooperativeDto } from './dto/update-cooperative.dto';
@@ -29,34 +29,34 @@ export class CooperativesController {
     constructor(private readonly cooperativesService: CooperativesService) { }
 
     @Post('register')
-    // @UseInterceptors(
-    //     FileFieldsInterceptor([
-    //         { name: 'logo', maxCount: 1 },
-    //         { name: 'certificate', maxCount: 1 },
-    //         { name: 'constitution', maxCount: 1 },
-    //     ]),
-    // )
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'logo', maxCount: 1 },
+            { name: 'certificate', maxCount: 1 },
+            { name: 'constitution', maxCount: 1 },
+        ]),
+    )
     register(
         @Body() dto: RegisterCooperativeDto,
-        /* @UploadedFiles() */ files?: any,
+        @UploadedFiles() files?: any,
     ) {
         return this.cooperativesService.register(dto, files);
     }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.COOP_ADMIN) // Or maybe open to anyone who wants to create one? Check original logic. Original says "create" requires Auth but checks if user already has coop.
-    // @UseInterceptors(
-    //     FileFieldsInterceptor([
-    //         { name: 'logo', maxCount: 1 },
-    //         { name: 'certificate', maxCount: 1 },
-    //         { name: 'constitution', maxCount: 1 },
-    //     ]),
-    // )
+    @Roles(UserRole.COOP_ADMIN)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'logo', maxCount: 1 },
+            { name: 'certificate', maxCount: 1 },
+            { name: 'constitution', maxCount: 1 },
+        ]),
+    )
     create(
         @Req() req: any,
         @Body() dto: RegisterCooperativeDto,
-        /* @UploadedFiles() */ files?: any,
+        @UploadedFiles() files?: any,
     ) {
         return this.cooperativesService.create(req.user.id, dto, files);
     }
@@ -74,18 +74,18 @@ export class CooperativesController {
     @Put(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.COOP_ADMIN, UserRole.SUPER_ADMIN)
-    // @UseInterceptors(
-    //     FileFieldsInterceptor([
-    //         { name: 'logo', maxCount: 1 },
-    //         { name: 'certificate', maxCount: 1 },
-    //         { name: 'constitution', maxCount: 1 },
-    //     ]),
-    // )
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'logo', maxCount: 1 },
+            { name: 'certificate', maxCount: 1 },
+            { name: 'constitution', maxCount: 1 },
+        ]),
+    )
     update(
         @Param('id') id: string,
         @Body() dto: UpdateCooperativeDto,
         @Req() req: any,
-        /* @UploadedFiles() */ files?: any,
+        @UploadedFiles() files?: any,
     ) {
         return this.cooperativesService.update(id, dto, req.user.id, files);
     }

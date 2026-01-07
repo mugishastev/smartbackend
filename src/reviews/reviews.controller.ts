@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, Req, ForbiddenException, UseInterceptors, UploadedFiles } from '@nestjs/common';
-// import { FilesInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nest-lab/fastify-multer';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReviewQueryDto } from './dto/review-query.dto';
@@ -35,11 +35,11 @@ export class ReviewsController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    // @UseInterceptors(FilesInterceptor('images', 5))
+    @UseInterceptors(FilesInterceptor('images', 5))
     async create(
         @Body() dto: CreateReviewDto,
         @Req() req: AuthRequest,
-        /* @UploadedFiles() */ files?: any[]
+        @UploadedFiles() files?: any[]
     ) {
         let images: string[] = [];
         if (files && files.length > 0) {
