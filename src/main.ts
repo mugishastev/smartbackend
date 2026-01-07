@@ -12,26 +12,10 @@ async function bootstrap(): Promise<void> {
     AppModule,
     new FastifyAdapter({
       logger: true,
-    })
+    }),
+    { rawBody: true }
   );
-  console.log('BOOTSTRAP: App created.');
-
-  // Register multipart support for file uploads using fastify-multer directly
-  const multer = require('fastify-multer');
-  console.log('BOOTSTRAP: multer contentParser type:', typeof multer.contentParser);
-  await app.register(multer.contentParser);
-  console.log('BOOTSTRAP: multer registered.');
-
-  const rawBody = require('fastify-raw-body');
-  console.log('BOOTSTRAP: rawBody type:', typeof rawBody);
-  await app.register(rawBody, {
-    field: 'rawBody',
-    global: false,
-    encoding: false,
-    runFirst: true,
-    routes: ['/api/webhooks/(.*)'],
-  });
-  console.log('BOOTSTRAP: rawBody registered.');
+  console.log('BOOTSTRAP: App created with native rawBody support.');
 
   app.setGlobalPrefix('api');
 

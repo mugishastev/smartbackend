@@ -32,9 +32,11 @@ import { AdminModule } from './admin/admin.module';
 import { JobApplicationsModule } from './job-applications/job-applications.module';
 import { ReturnsModule } from './returns/returns.module';
 import { BuyerModule } from './buyer/buyer.module';
+import { FastifyMulterModule } from '@nest-lab/fastify-multer';
 
 @Module({
   imports: [
+    FastifyMulterModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({
