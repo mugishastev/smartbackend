@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
-import { blockchainService } from '../common/services/blockchain.service';
 import { Report, Transaction, User, MemberFinancial } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async create(createReportDto: any) {
+    async create(userId: string, createReportDto: any) {
         return this.prisma.report.create({
             data: createReportDto
         });

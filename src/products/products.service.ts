@@ -3,12 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { ProductQueryDto } from './dto/product-query.dto';
-import { UploadService } from '../services/upload.service';
+import { UploadService } from '../common/services/upload.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private uploadService: UploadService,
+    ) { }
 
     async create(createProductDto: CreateProductDto, user: any, files?: any[]) {
         // Check authorization (though controller/guard usually handles existence, we check business logic here)
@@ -21,7 +24,7 @@ export class ProductsService {
         // Upload product images
         let images: string[] = [];
         if (files && files.length > 0) {
-            images = await UploadService.uploadMultipleImages(files, 'products');
+            images = await this.uploadService.uploadMultipleImages(files, 'products');
         }
 
         const product = await this.prisma.product.create({
@@ -235,7 +238,7 @@ export class ProductsService {
 
         // Handle image updates
         if (files && files.length > 0) {
-            const newImages = await UploadService.uploadMultipleImages(files, 'products');
+            const newImages = await this.uploadService.uploadMultipleImages(files, 'products');
             updateData.images = [...existingProduct.images, ...newImages];
         }
 

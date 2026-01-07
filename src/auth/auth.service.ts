@@ -18,6 +18,8 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private emailService: EmailService,
+    private otpService: OTPService,
   ) { }
 
   async register(dto: RegisterDto) {
@@ -44,7 +46,7 @@ export class AuthService {
     });
 
     try {
-      await OTPService.createAndSendOTP(user.id, user.email, OTPType.REGISTRATION);
+      await this.otpService.createAndSendOTP(user.id, user.email, OTPType.REGISTRATION);
       return {
         message: 'Registration successful. OTP sent.',
       };
@@ -63,7 +65,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const isValid = await OTPService.verifyOTP(user.id, dto.code, OTPType.REGISTRATION);
+    const isValid = await this.otpService.verifyOTP(user.id, dto.code, OTPType.REGISTRATION);
 
     if (!isValid) {
       throw new BadRequestException('Invalid or expired OTP');
@@ -78,7 +80,7 @@ export class AuthService {
     });
 
     try {
-      await EmailService.sendWelcomeEmail(user.email, user.firstName);
+      await this.emailService.sendWelcomeEmail(user.email, user.firstName);
     } catch (e) {
       console.error('Failed to send welcome email', e);
     }
@@ -176,7 +178,7 @@ export class AuthService {
       return { message: 'If the email exists, a password reset code has been sent.' };
     }
 
-    await OTPService.createAndSendOTP(user.id, email, OTPType.PASSWORD_RESET);
+    await this.otpService.createAndSendOTP(user.id, email, OTPType.PASSWORD_RESET);
     return { message: 'Password reset code sent to your email.' };
   }
 
@@ -187,7 +189,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    const isValid = await OTPService.verifyOTP(user.id, dto.code, OTPType.PASSWORD_RESET);
+    const isValid = await this.otpService.verifyOTP(user.id, dto.code, OTPType.PASSWORD_RESET);
 
     if (!isValid) {
       throw new BadRequestException('Invalid or expired OTP');
@@ -210,7 +212,7 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    await OTPService.createAndSendOTP(user.id, email, type);
+    await this.otpService.createAndSendOTP(user.id, email, type);
     return { message: 'OTP sent successfully' };
   }
 

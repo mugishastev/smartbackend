@@ -1,3 +1,4 @@
+import { Injectable } from '@nestjs/common';
 import * as crypto from 'crypto';
 
 /**
@@ -6,7 +7,8 @@ import * as crypto from 'crypto';
  * This service provides real blockchain integration using ethers.js for Ethereum networks.
  * It can log transaction hashes to a smart contract for transparency and verification.
  */
-class BlockchainService {
+@Injectable()
+export class BlockchainService {
   private contractAddress?: string;
   private provider?: any;
   private signer?: any;
@@ -193,5 +195,3 @@ class BlockchainService {
     }
   }
 }
-
-export const blockchainService = new BlockchainService();

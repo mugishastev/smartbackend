@@ -1,13 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import { config } from '../../config';
-
-export enum OTPType {
-  REGISTRATION = 'REGISTRATION',
-  PASSWORD_RESET = 'PASSWORD_RESET',
-  LOGIN = 'LOGIN',
-  VERIFICATION = 'VERIFICATION'
-}
+import { OTPType } from '../../lib/enums';
 
 @Injectable()
 export class EmailService {

@@ -1,13 +1,14 @@
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
-import { RecommendationService } from '../services/recommendation.service';
+import { RecommendationsService } from './recommendations.service';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Controller('recommendations')
 export class RecommendationsController {
+    constructor(private readonly recommendationsService: RecommendationsService) { }
     @Get('trending')
     async getTrending(@Query('limit') limit?: string) {
         const limitNum = limit ? parseInt(limit, 10) : 10;
-        return RecommendationService.getTrendingProducts(limitNum);
+        return this.recommendationsService.getTrendingProducts(limitNum);
     }
 
     @Get()
@@ -19,7 +20,7 @@ export class RecommendationsController {
     ) {
         const userId = req.user?.id || null;
         const limitNum = limit ? parseInt(limit, 10) : 10;
-        return RecommendationService.getRecommendations(userId, productId, limitNum);
+        return this.recommendationsService.getRecommendations(userId, productId, limitNum);
     }
 
     @Get('you-might-like')
@@ -28,9 +29,9 @@ export class RecommendationsController {
         const userId = req.user?.id;
         if (!userId) {
             // Fallback for guests
-            return RecommendationService.getTrendingProducts(limit ? parseInt(limit, 10) : 10);
+            return this.recommendationsService.getTrendingProducts(limit ? parseInt(limit, 10) : 10);
         }
         const limitNum = limit ? parseInt(limit, 10) : 10;
-        return RecommendationService.getYouMightLike(userId, limitNum);
+        return this.recommendationsService.getYouMightLike(userId, limitNum);
     }
 }

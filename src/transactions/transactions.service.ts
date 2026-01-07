@@ -3,14 +3,15 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionQueryDto } from './dto/transaction-query.dto';
 import { ApprovalsService } from '../approvals/approvals.service';
-import { blockchainService } from '../common/services/blockchain.service';
+import { BlockchainService } from '../common/services/blockchain.service';
 import { UserRole, TransactionStatus, TransactionType } from '../lib/enums';
 
 @Injectable()
 export class TransactionsService {
     constructor(
         private prisma: PrismaService,
-        private approvalsService: ApprovalsService
+        private approvalsService: ApprovalsService,
+        private blockchainService: BlockchainService,
     ) { }
 
     // Renamed to match legacy method name if preferred, or just 'create'
@@ -36,10 +37,10 @@ export class TransactionsService {
                 status,
             };
 
-            if (blockchainService) {
-                blockchainHash = blockchainService.generateTransactionHash(hashData);
+            if (this.blockchainService) {
+                blockchainHash = this.blockchainService.generateTransactionHash(hashData);
                 // We do not await logging here strictly or we do? Legacy awaited.
-                await blockchainService.logHash(blockchainHash);
+                await this.blockchainService.logHash(blockchainHash);
             }
         }
 

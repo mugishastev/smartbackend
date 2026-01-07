@@ -6,15 +6,19 @@ import { UpdateMemberDto } from './dto/update-member.dto';
 import { MemberQueryDto } from './dto/member-query.dto';
 import { AcceptInvitationDto } from './dto/accept-invitation.dto';
 import { Prisma, UserRole } from '@prisma/client';
-import { EmailService } from '../services/email.service';
-import { CSVService } from '../services/csv.service';
+import { EmailService } from '../common/services/email.service';
+import { CSVService } from '../common/services/csv.service';
 import { config } from '../config';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class MembersService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private emailService: EmailService,
+        private csvService: CSVService,
+    ) { }
 
     async inviteMember(cooperativeId: string, invitedBy: string, dto: InviteMemberDto) {
         // Check if user already exists
@@ -96,7 +100,7 @@ export class MembersService {
         });
 
         try {
-            await EmailService.sendMemberCredentials(
+            await this.emailService.sendMemberCredentials(
                 dto.email,
                 member.firstName,
                 cooperative.name,
@@ -127,7 +131,7 @@ export class MembersService {
     }
 
     async importMembers(cooperativeId: string, invitedBy: string, buffer: Buffer) {
-        const result = await CSVService.importMembers(cooperativeId, invitedBy, buffer);
+        const result = await this.csvService.importMembers(cooperativeId, invitedBy, buffer);
 
         this.prisma.activityLog.create({
             data: {
@@ -143,7 +147,7 @@ export class MembersService {
     }
 
     async acceptInvitation(dto: AcceptInvitationDto) {
-        const user = await CSVService.acceptInvitation(dto.token, dto.password, { phone: dto.phone });
+        const user = await this.csvService.acceptInvitation(dto.token, dto.password, { phone: dto.phone });
 
         // Generate simple token (in real auth this would be the AuthService's login)
         // But here we return just a random string as the legacy controller did?
@@ -251,7 +255,7 @@ export class MembersService {
         // I should probably double check but for now I'll assume standard creation logic + email.
 
         try {
-            await EmailService.sendMemberCredentials(
+            await this.emailService.sendMemberCredentials(
                 dto.email,
                 member.firstName,
                 cooperative.name,

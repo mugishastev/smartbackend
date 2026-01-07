@@ -10,7 +10,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 // import { FileInterceptor } from '@nestjs/platform-express';
-import { ImportResult } from '../services/csv.service';
+import { CSVService } from '../common/services/csv.service';
 import { AuthRequest } from '../middleware/auth.middleware';
 
 @Controller('members')

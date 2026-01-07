@@ -2,13 +2,14 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException,
 import { PrismaService } from '../prisma/prisma.service';
 import { ApiError } from '../lib/ApiError';
 import { UserRole, TransactionStatus } from '../lib/enums';
-// import { blockchainService } from '../services/blockchain.service'; // Use direct import or provider?
-// Using direct import for now as it's a utility class instance
-import { blockchainService } from '../services/blockchain.service';
+import { BlockchainService } from '../common/services/blockchain.service';
 
 @Injectable()
 export class ApprovalsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private blockchainService: BlockchainService,
+    ) { }
 
     async createApprovalRequest(transactionId: string, requesterId: string) {
         const transaction = await this.prisma.transaction.findUnique({
@@ -217,13 +218,7 @@ export class ApprovalsService {
 
         if (!transaction) return;
 
-        if (!blockchainService) {
-            // Fallback or log error
-            console.warn('Blockchain service not available for finalization');
-            return;
-        }
-
-        const hash = blockchainService.generateTransactionHash({
+        const hash = this.blockchainService.generateTransactionHash({
             cooperativeId: transaction.cooperativeId,
             userId: transaction.userId,
             type: transaction.type,
@@ -234,7 +229,7 @@ export class ApprovalsService {
             status: TransactionStatus.APPROVED,
         });
 
-        const blockchainLog = await blockchainService.logHash(hash);
+        const blockchainLog = await this.blockchainService.logHash(hash);
 
         await this.prisma.transaction.update({
             where: { id: transactionId },

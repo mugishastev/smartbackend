@@ -10,11 +10,14 @@ import { AuthRequest } from '../middleware/auth.middleware';
 // I will replicate logic: receive files, upload them, then pass image URLs to service.
 // OR pass files to service? Legacy controller does `UploadService.uploadMultipleImages`.
 // I should use that until I migrate UploadService fully (it is a utility service mostly).
-import { UploadService } from '../services/upload.service';
+import { UploadService } from '../common/services/upload.service';
 
 @Controller('reviews')
 export class ReviewsController {
-    constructor(private readonly reviewsService: ReviewsService) { }
+    constructor(
+        private readonly reviewsService: ReviewsService,
+        private readonly uploadService: UploadService,
+    ) { }
 
     @Get('product/:productId')
     async getProductReviews(
@@ -41,7 +44,7 @@ export class ReviewsController {
         let images: string[] = [];
         if (files && files.length > 0) {
             // Legacy UploadService usage
-            images = await UploadService.uploadMultipleImages(files as any[], 'reviews');
+            images = await this.uploadService.uploadMultipleImages(files as any[], 'reviews');
         }
         // Override images in DTO with uploaded ones if present
         if (images.length > 0) {

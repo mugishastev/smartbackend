@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContactDto } from './dto/create-contact.dto';
-import { EmailService } from '../services/email.service';
+import { EmailService } from '../common/services/email.service';
 
 @Injectable()
 export class ContactsService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly emailService: EmailService,
+    ) { }
 
     async create(createContactDto: CreateContactDto) {
         const contact = await this.prisma.contact.create({
@@ -16,7 +19,7 @@ export class ContactsService {
         });
 
         try {
-            await EmailService.sendContactConfirmationEmail(contact.email, contact.name);
+            await this.emailService.sendContactConfirmationEmail(contact.email, contact.name);
         } catch (error) {
             console.error('Failed to send contact confirmation email:', error);
         }

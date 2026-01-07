@@ -23,13 +23,13 @@ export interface UserLoyaltyStatus {
 export class LoyaltyService {
     constructor(private prisma: PrismaService) { }
 
-    async getTiers() {
+    async findAllTiers() {
         return this.prisma.loyaltyTier.findMany({
             orderBy: { priority: 'asc' },
         });
     }
 
-    async getUserStatus(userId: string): Promise<UserLoyaltyStatus> {
+    async getUserLoyalty(userId: string): Promise<UserLoyaltyStatus> {
         const aggregate = await this.prisma.order.aggregate({
             where: { buyerId: userId },
             _sum: { totalAmount: true },
@@ -37,7 +37,7 @@ export class LoyaltyService {
 
         const lifetimeSpend = Number(aggregate._sum.totalAmount ?? 0);
         const points = Math.floor(lifetimeSpend / 100);
-        const tiers = await this.getTiers();
+        const tiers = await this.findAllTiers();
 
         if (!tiers.length) {
             return {
@@ -75,7 +75,7 @@ export class LoyaltyService {
     }
 
     // Keep the scaffolded logic required for Controller if missing in service
-    async create(createLoyaltyTierDto: any) {
+    async createTier(createLoyaltyTierDto: any) {
         return this.prisma.loyaltyTier.create({
             data: createLoyaltyTierDto
         });

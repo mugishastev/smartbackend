@@ -13,7 +13,11 @@ import bcrypt from 'bcryptjs';
 
 @Injectable()
 export class CooperativesService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private uploadService: UploadService,
+        private emailService: EmailService,
+    ) { }
 
     async register(
         dto: RegisterCooperativeDto,
@@ -41,13 +45,13 @@ export class CooperativesService {
 
         if (files) {
             if (files.logo) {
-                logo = await UploadService.uploadImage(files.logo[0], 'cooperatives/logos');
+                logo = await this.uploadService.uploadImage(files.logo[0], 'cooperatives/logos');
             }
             if (files.certificate) {
-                certificateUrl = await UploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
+                certificateUrl = await this.uploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
             }
             if (files.constitution) {
-                constitutionUrl = await UploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
+                constitutionUrl = await this.uploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
             }
         }
 
@@ -100,13 +104,13 @@ export class CooperativesService {
 
         if (files) {
             if (files.logo) {
-                logo = await UploadService.uploadImage(files.logo[0], 'cooperatives/logos');
+                logo = await this.uploadService.uploadImage(files.logo[0], 'cooperatives/logos');
             }
             if (files.certificate) {
-                certificateUrl = await UploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
+                certificateUrl = await this.uploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
             }
             if (files.constitution) {
-                constitutionUrl = await UploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
+                constitutionUrl = await this.uploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
             }
         }
 
@@ -227,13 +231,13 @@ export class CooperativesService {
 
         if (files) {
             if (files.logo) {
-                updateData.logo = await UploadService.uploadImage(files.logo[0], 'cooperatives/logos');
+                updateData.logo = await this.uploadService.uploadImage(files.logo[0], 'cooperatives/logos');
             }
             if (files.certificate) {
-                updateData.certificateUrl = await UploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
+                updateData.certificateUrl = await this.uploadService.uploadDocument(files.certificate[0], 'cooperatives/certificates');
             }
             if (files.constitution) {
-                updateData.constitutionUrl = await UploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
+                updateData.constitutionUrl = await this.uploadService.uploadDocument(files.constitution[0], 'cooperatives/constitutions');
             }
         }
 
@@ -304,7 +308,7 @@ export class CooperativesService {
         });
 
         try {
-            await EmailService.sendAdminCredentials(
+            await this.emailService.sendAdminCredentials(
                 cooperative.email,
                 dto.adminFirstName,
                 cooperative.name,
@@ -363,7 +367,7 @@ export class CooperativesService {
         }).catch(console.error);
 
         try {
-            await EmailService.sendAdminCredentials(
+            await this.emailService.sendAdminCredentials(
                 cooperative.email,
                 dto.adminFirstName,
                 cooperative.name,
