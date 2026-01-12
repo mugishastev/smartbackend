@@ -590,5 +590,134 @@ export class AdminService {
 
     return reportData;
   }
+
+  async getRecentActivities(limit?: number) {
+    const activities = await this.prisma.activityLog.findMany({
+      take: limit || 50,
+      orderBy: {
+        createdAt: 'desc',
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return activities;
+  }
+
+  async getSystemHealth() {
+    // Get server uptime
+    const uptime = process.uptime();
+    const uptimeHours = Math.floor(uptime / 3600);
+    const uptimeMinutes = Math.floor((uptime % 3600) / 60);
+    const uptimeFormatted = `${uptimeHours}h ${uptimeMinutes}m`;
+
+    // Check database connection
+    let databaseStatus = 'connected';
+    let activeConnections = 0;
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      // Get active connections count (PostgreSQL specific)
+      const result: any = await this.prisma.$queryRaw`
+        SELECT count(*) as count 
+        FROM pg_stat_activity 
+        WHERE state = 'active'
+      `;
+      activeConnections = parseInt(result[0]?.count || '0');
+    } catch (error) {
+      databaseStatus = 'disconnected';
+    }
+
+    // Get security metrics
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+
+    const [failedLogins, activeSessions] = await Promise.all([
+      this.prisma.activityLog.count({
+        where: {
+          action: 'LOGIN_FAILED',
+          createdAt: {
+            gte: oneDayAgo,
+          },
+        },
+      }),
+      this.prisma.activityLog.count({
+        where: {
+          action: 'LOGIN_SUCCESS',
+          createdAt: {
+            gte: thirtyMinutesAgo,
+          },
+        },
+      }),
+    ]);
+
+    // Get recent alerts (critical activities)
+    const alerts = await this.prisma.activityLog.findMany({
+      where: {
+        action: {
+          in: ['COOPERATIVE_SUSPENDED', 'USER_DEACTIVATED', 'SECURITY_ALERT'],
+        },
+        createdAt: {
+          gte: oneDayAgo,
+        },
+      },
+      take: 10,
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return {
+      server: {
+        status: 'healthy',
+        uptime: uptimeFormatted,
+      },
+      database: {
+        status: databaseStatus,
+        connections: activeConnections,
+      },
+      security: {
+        failedLogins,
+        activeSessions,
+      },
+      alerts: alerts.map(a => ({
+        action: a.action,
+        entity: a.entity,
+        createdAt: a.createdAt,
+        details: a.details,
+      })),
+    };
+  }
+
+  async getCooperativeById(id: string) {
+    const cooperative = await this.prisma.cooperative.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            users: true,
+            products: true,
+            transactions: true,
+          },
+        },
+      },
+    });
+
+    if (!cooperative) {
+      throw new ApiError(404, 'Cooperative not found');
+    }
+
+    return {
+      message: 'Cooperative retrieved successfully',
+      cooperative,
+    };
+  }
 }
 

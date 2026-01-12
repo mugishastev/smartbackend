@@ -20,4 +20,9 @@ export class BuyerController {
     getOrders(@Req() req: any, @Query('limit') limit?: number) {
         return this.buyerService.getOrders(req.user.id, limit);
     }
+
+    @Get('payments')
+    getPayments(@Req() req: any) {
+        return this.buyerService.getPayments(req.user.id);
+    }
 }

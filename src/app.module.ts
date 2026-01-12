@@ -32,6 +32,9 @@ import { AdminModule } from './admin/admin.module';
 import { JobApplicationsModule } from './job-applications/job-applications.module';
 import { ReturnsModule } from './returns/returns.module';
 import { BuyerModule } from './buyer/buyer.module';
+import { AccountantModule } from './accountant/accountant.module';
+import { SecretaryModule } from './secretary/secretary.module';
+import { RegulatorModule } from './regulator/regulator.module';
 import { FastifyMulterModule } from '@nest-lab/fastify-multer';
 
 @Module({
@@ -82,6 +85,9 @@ import { FastifyMulterModule } from '@nest-lab/fastify-multer';
     JobApplicationsModule,
     ReturnsModule,
     BuyerModule,
+    AccountantModule,
+    SecretaryModule,
+    RegulatorModule,
   ],
 })
 export class AppModule { }

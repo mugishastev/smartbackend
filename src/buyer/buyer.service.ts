@@ -64,4 +64,36 @@ export class BuyerService {
             }
         });
     }
+
+    async getPayments(userId: string) {
+        // Get orders with payment information for the buyer
+        const orders = await this.prisma.order.findMany({
+            where: {
+                buyerId: userId,
+                paymentStatus: { in: ['COMPLETED', 'PROCESSING', 'PENDING'] }
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+                id: true,
+                orderNumber: true,
+                totalAmount: true,
+                paymentMethod: true,
+                paymentStatus: true,
+                transactionRef: true,
+                createdAt: true,
+            }
+        });
+
+        // Transform to payment format
+        return orders.map(order => ({
+            id: order.id,
+            amount: order.totalAmount,
+            status: order.paymentStatus,
+            paymentMethod: order.paymentMethod,
+            reference: order.transactionRef,
+            description: `Payment for Order ${order.orderNumber}`,
+            createdAt: order.createdAt,
+        }));
+    }
 }

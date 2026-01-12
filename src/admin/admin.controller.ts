@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Query, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, UseGuards, Patch } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { CooperativeStatus } from '../lib/enums';
 
@@ -11,6 +11,11 @@ export class AdminController {
         return this.adminService.findAllCooperatives(search, status);
     }
 
+    @Get('cooperatives/:id')
+    async getCooperativeById(@Param('id') id: string) {
+        return this.adminService.getCooperativeById(id);
+    }
+
     @Post('cooperatives/:id/status')
     async manageCooperativeStatus(
         @Param('id') id: string,
@@ -20,9 +25,33 @@ export class AdminController {
         return this.adminService.manageCooperativeStatus(id, status, remarks);
     }
 
+    @Patch('cooperatives/:id/status')
+    async updateCooperativeStatus(
+        @Param('id') id: string,
+        @Body('status') status: CooperativeStatus,
+        @Body('remarks') remarks?: string
+    ) {
+        return this.adminService.manageCooperativeStatus(id, status, remarks);
+    }
+
+    @Get('analytics')
+    async getAnalytics() {
+        return this.adminService.getDashboardAnalytics();
+    }
+
     @Get('analytics/dashboard')
     async getDashboardAnalytics() {
         return this.adminService.getDashboardAnalytics();
+    }
+
+    @Get('activities')
+    async getRecentActivities(@Query('limit') limit?: number) {
+        return this.adminService.getRecentActivities(limit);
+    }
+
+    @Get('system-health')
+    async getSystemHealth() {
+        return this.adminService.getSystemHealth();
     }
 
     @Get('reports/financial')
