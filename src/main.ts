@@ -18,6 +18,10 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
+  // Register fastify-multer content parser
+  const { contentParser } = require('fastify-multer');
+  await app.register(contentParser);
+
   app.enableCors({
     origin: true,
     credentials: true,
