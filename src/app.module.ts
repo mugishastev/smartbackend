@@ -35,11 +35,8 @@ import { BuyerModule } from './buyer/buyer.module';
 import { AccountantModule } from './accountant/accountant.module';
 import { SecretaryModule } from './secretary/secretary.module';
 import { RegulatorModule } from './regulator/regulator.module';
-import { FastifyMulterModule } from '@nest-lab/fastify-multer';
-
 @Module({
   imports: [
-    FastifyMulterModule,
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: Joi.object({

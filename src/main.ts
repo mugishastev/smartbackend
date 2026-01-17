@@ -18,9 +18,13 @@ async function bootstrap(): Promise<void> {
 
   app.setGlobalPrefix('api');
 
-  // Register fastify-multer content parser
-  const { contentParser } = require('fastify-multer');
-  await app.register(contentParser);
+  // Register @fastify/multipart
+  await app.register(require('@fastify/multipart'), {
+    attachFieldsToBody: 'keyValues', // Optional, but we handle it manually in helper anyway
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+  });
 
   app.enableCors({
     origin: true,

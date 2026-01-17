@@ -11,7 +11,8 @@ import {
     Query,
     Req,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nest-lab/fastify-multer';
+import { FastifyRequest } from 'fastify';
+import { processMultipartRequest } from '../common/helpers/multipart.helper';
 import { CooperativesService } from './cooperatives.service';
 import { RegisterCooperativeDto } from './dto/register-cooperative.dto';
 import { UpdateCooperativeDto } from './dto/update-cooperative.dto';
@@ -29,35 +30,18 @@ export class CooperativesController {
     constructor(private readonly cooperativesService: CooperativesService) { }
 
     @Post('register')
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'logo', maxCount: 1 },
-            { name: 'certificate', maxCount: 1 },
-            { name: 'constitution', maxCount: 1 },
-        ]),
-    )
-    register(
-        @Body() dto: RegisterCooperativeDto,
-        @UploadedFiles() files?: any,
-    ) {
+    async register(@Req() req: FastifyRequest) {
+        const { body, files } = await processMultipartRequest(req);
+        const dto = body as RegisterCooperativeDto; // Direct cast for now
         return this.cooperativesService.register(dto, files);
     }
 
     @Post()
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.COOP_ADMIN)
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'logo', maxCount: 1 },
-            { name: 'certificate', maxCount: 1 },
-            { name: 'constitution', maxCount: 1 },
-        ]),
-    )
-    create(
-        @Req() req: any,
-        @Body() dto: RegisterCooperativeDto,
-        @UploadedFiles() files?: any,
-    ) {
+    async create(@Req() req: any) {
+        const { body, files } = await processMultipartRequest(req);
+        const dto = body as RegisterCooperativeDto;
         return this.cooperativesService.create(req.user.id, dto, files);
     }
 
@@ -74,19 +58,12 @@ export class CooperativesController {
     @Put(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles(UserRole.COOP_ADMIN, UserRole.SUPER_ADMIN)
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'logo', maxCount: 1 },
-            { name: 'certificate', maxCount: 1 },
-            { name: 'constitution', maxCount: 1 },
-        ]),
-    )
-    update(
+    async update(
         @Param('id') id: string,
-        @Body() dto: UpdateCooperativeDto,
         @Req() req: any,
-        @UploadedFiles() files?: any,
     ) {
+        const { body, files } = await processMultipartRequest(req);
+        const dto = body as UpdateCooperativeDto;
         return this.cooperativesService.update(id, dto, req.user.id, files);
     }
 
