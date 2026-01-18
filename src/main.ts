@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+// Restart trigger
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 
 import { AppModule } from './app.module';
@@ -20,7 +21,7 @@ async function bootstrap(): Promise<void> {
 
   // Register @fastify/multipart
   await app.register(require('@fastify/multipart'), {
-    attachFieldsToBody: 'keyValues', // Optional, but we handle it manually in helper anyway
+    // attachFieldsToBody: 'keyValues', // Disabled to allow manual multipart processing in helper
     limits: {
       fileSize: 10 * 1024 * 1024, // 10MB limit
     },

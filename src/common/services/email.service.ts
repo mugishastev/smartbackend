@@ -503,6 +503,53 @@ export class EmailService {
     });
   }
 
+  async sendRegistrationReceivedEmail(email: string, cooperativeName: string): Promise<void> {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
+            .content { background: #f9fafb; padding: 30px; border-radius: 8px; margin: 20px 0; }
+            .info-box { background: white; padding: 15px; border-left: 4px solid #f59e0b; margin: 15px 0; }
+            .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Application Received</h1>
+            </div>
+            <div class="content">
+              <h2>Hello from Smart Coop Hub,</h2>
+              <p>We have received your registration application for <strong>${cooperativeName}</strong>.</p>
+              
+              <div class="info-box">
+                <p><strong>Status:</strong> Pending Approval</p>
+                <p>Your application is currently under review by our administration team.</p>
+              </div>
+
+              <p>You will receive another email once your application has been verified and approved.</p>
+              <p>Thank you for choosing Smart Coop Hub.</p>
+            </div>
+            <div class="footer">
+              <p>&copy; ${new Date().getFullYear()} Smart Coop Hub. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    await this.transporter.sendMail({
+      from: config.email.from,
+      to: email,
+      subject: 'Cooperative Registration Received - Smart Coop Hub',
+      html,
+    });
+  }
+
   async sendNotificationEmail(to: string, subject: string, html: string): Promise<void> {
     await this.transporter.sendMail({
       from: config.email.from,

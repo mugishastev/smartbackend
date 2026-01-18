@@ -10,6 +10,7 @@ import {
     UploadedFiles,
     Query,
     Req,
+    BadRequestException,
 } from '@nestjs/common';
 import { FastifyRequest } from 'fastify';
 import { processMultipartRequest } from '../common/helpers/multipart.helper';
@@ -31,8 +32,18 @@ export class CooperativesController {
 
     @Post('register')
     async register(@Req() req: FastifyRequest) {
+        console.log('Registering cooperative...');
         const { body, files } = await processMultipartRequest(req);
-        const dto = body as RegisterCooperativeDto; // Direct cast for now
+        console.log('Parsed body:', body);
+
+        // Manually validate DTO since we're bypassing global pipes with multipart
+        // We need to check required fields
+        if (!body.registrationNumber) {
+            console.error('Missing registrationNumber. Received keys:', Object.keys(body));
+            throw new BadRequestException(`Registration number is required. Received body keys: ${Object.keys(body).join(', ')}`);
+        }
+
+        const dto = body as RegisterCooperativeDto;
         return this.cooperativesService.register(dto, files);
     }
 

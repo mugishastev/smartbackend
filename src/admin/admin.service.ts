@@ -54,6 +54,7 @@ export class AdminService {
         },
       },
     });
+    console.log(`[AdminService.findAllCooperatives] Found ${cooperatives.length} cooperatives. Statuses: ${cooperatives.map(c => c.status).join(', ')}`);
     return cooperatives;
   }
 
@@ -281,6 +282,11 @@ export class AdminService {
         amount: typeof item.amount === 'bigint' ? Number(item.amount) : item.amount
       })),
     };
+
+    console.log('[AdminService.getDashboardAnalytics] Stats:', JSON.stringify({
+      totalCooperatives,
+      pendingCooperatives: (cooperativesByStatus as any[]).find((g: any) => g.status === 'PENDING')?._count?.status || 0
+    }));
 
     return analytics;
   }

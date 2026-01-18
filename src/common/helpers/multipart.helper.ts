@@ -31,6 +31,7 @@ export async function processMultipartRequest(req: FastifyRequest): Promise<Mult
     const files: Record<string, MultipartFile[]> = {};
 
     for await (const part of multipartReq.parts()) {
+        console.log('Processing part:', part.type, part.fieldname);
         if (part.type === 'file') {
             const buffer = await part.toBuffer();
             const file: MultipartFile = {
@@ -52,6 +53,7 @@ export async function processMultipartRequest(req: FastifyRequest): Promise<Mult
             // But for basic FormData, it's usually primitives.
             // @ts-ignore
             const value = part.value;
+            console.log('Field value:', part.fieldname, value);
 
             // Basic handling for array fields (e.g. key[]) or just overwriting
             // For simplicity, we just assign. If array support is needed, check if body[part.fieldname] exists.

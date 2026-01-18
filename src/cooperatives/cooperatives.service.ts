@@ -65,6 +65,13 @@ export class CooperativesService {
             },
         });
 
+        try {
+            await this.emailService.sendRegistrationReceivedEmail(cooperative.email, cooperative.name);
+        } catch (error) {
+            console.error('Failed to send registration email:', error);
+            // Don't throw error here to avoid rolling back the transaction if email fails
+        }
+
         return {
             message: 'Cooperative registration submitted successfully. Your application is pending approval.',
             cooperative: {
