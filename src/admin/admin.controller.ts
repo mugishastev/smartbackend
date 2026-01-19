@@ -8,7 +8,21 @@ export class AdminController {
 
     @Get('cooperatives')
     async getAllCooperatives(@Query('search') search?: string, @Query('status') status?: string) {
-        return this.adminService.findAllCooperatives(search, status);
+        console.log('[AdminController.getAllCooperatives] Called with query params:', { search, status });
+        const cooperatives = await this.adminService.findAllCooperatives(search, status);
+        console.log('[AdminController.getAllCooperatives] Returning', cooperatives.length, 'cooperatives');
+
+        // Return in the format expected by frontend
+        return {
+            message: 'Cooperatives retrieved successfully',
+            cooperatives,
+            pagination: {
+                total: cooperatives.length,
+                page: 1,
+                limit: cooperatives.length,
+                totalPages: 1
+            }
+        };
     }
 
     @Get('cooperatives/:id')

@@ -29,10 +29,13 @@ export class AdminService {
   }
 
   async findAllCooperatives(search?: string, status?: string) {
+    console.log('[AdminService.findAllCooperatives] Called with params:', { search, status });
+
     const where: any = {};
 
     if (status) {
       where.status = status as CooperativeStatus;
+      console.log('[AdminService.findAllCooperatives] Filtering by status:', status);
     }
 
     if (search) {
@@ -41,7 +44,10 @@ export class AdminService {
         { registrationNumber: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
       ];
+      console.log('[AdminService.findAllCooperatives] Filtering by search:', search);
     }
+
+    console.log('[AdminService.findAllCooperatives] Where clause:', JSON.stringify(where, null, 2));
 
     const cooperatives = await this.prisma.cooperative.findMany({
       where,
@@ -54,7 +60,30 @@ export class AdminService {
         },
       },
     });
-    console.log(`[AdminService.findAllCooperatives] Found ${cooperatives.length} cooperatives. Statuses: ${cooperatives.map(c => c.status).join(', ')}`);
+
+    console.log(`[AdminService.findAllCooperatives] Found ${cooperatives.length} cooperatives`);
+    if (cooperatives.length > 0) {
+      console.log('[AdminService.findAllCooperatives] Statuses:', cooperatives.map(c => c.status).join(', '));
+      console.log('[AdminService.findAllCooperatives] First cooperative:', {
+        id: cooperatives[0].id,
+        name: cooperatives[0].name,
+        status: cooperatives[0].status,
+        email: cooperatives[0].email
+      });
+    } else {
+      console.log('[AdminService.findAllCooperatives] No cooperatives found with current filters');
+      // Let's check if there are ANY cooperatives in the database
+      const totalCoops = await this.prisma.cooperative.count();
+      console.log('[AdminService.findAllCooperatives] Total cooperatives in database:', totalCoops);
+      if (totalCoops > 0) {
+        const allStatuses = await this.prisma.cooperative.groupBy({
+          by: ['status'],
+          _count: { status: true }
+        });
+        console.log('[AdminService.findAllCooperatives] Cooperatives by status:', allStatuses);
+      }
+    }
+
     return cooperatives;
   }
 
