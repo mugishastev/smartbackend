@@ -87,6 +87,53 @@ export class AdminService {
     return cooperatives;
   }
 
+  async findAllUsers(search?: string, role?: string, page: number = 1, limit: number = 20) {
+    const where: any = {};
+
+    if (role && role !== 'ALL') {
+      where.role = role as UserRole;
+    }
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          cooperative: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      users,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async manageCooperativeStatus(
     cooperativeId: string,
     status: CooperativeStatus,

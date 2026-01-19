@@ -25,6 +25,21 @@ export class AdminController {
         };
     }
 
+    @Get('users')
+    async getAllUsers(
+        @Query('search') search?: string,
+        @Query('role') role?: string,
+        @Query('page') page: string = '1',
+        @Query('limit') limit: string = '20'
+    ) {
+        return this.adminService.findAllUsers(
+            search,
+            role,
+            parseInt(page),
+            parseInt(limit)
+        );
+    }
+
     @Get('cooperatives/:id')
     async getCooperativeById(@Param('id') id: string) {
         return this.adminService.getCooperativeById(id);

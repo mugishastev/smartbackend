@@ -268,72 +268,92 @@ export class CooperativesService {
     }
 
     async approve(id: string, dto: ApproveCooperativeDto, adminId: string) {
+        console.log(`[CooperativesService.approve] Starting approval for coop ${id} by admin ${adminId}`);
         const cooperative = await this.prisma.cooperative.findUnique({ where: { id } });
 
-        if (!cooperative) throw new NotFoundException('Cooperative not found');
-        if (cooperative.status !== 'PENDING') throw new BadRequestException('Cooperative is not in pending status');
-
-        const existingUser = await this.prisma.user.findUnique({ where: { email: dto.adminEmail } });
-        if (existingUser) throw new BadRequestException('A user with this email already exists');
-
-        const hashedPassword = await bcrypt.hash(dto.adminPassword, 10);
-
-        const result = await this.prisma.$transaction(async (tx) => {
-            const updatedCooperative = await tx.cooperative.update({
-                where: { id },
-                data: {
-                    status: 'APPROVED',
-                    verifiedBy: adminId,
-                    verifiedAt: new Date(),
-                },
-            });
-
-            const adminUser = await tx.user.create({
-                data: {
-                    email: dto.adminEmail,
-                    password: hashedPassword,
-                    firstName: dto.adminFirstName,
-                    lastName: dto.adminLastName,
-                    role: UserRole.COOP_ADMIN,
-                    cooperativeId: id,
-                    isActive: true,
-                    emailVerified: true,
-                },
-            });
-
-            await tx.activityLog.create({
-                data: {
-                    userId: adminId,
-                    cooperativeId: id,
-                    action: 'COOPERATIVE_APPROVED',
-                    entity: 'COOPERATIVE',
-                    entityId: id,
-                },
-            });
-
-            return { cooperative: updatedCooperative, admin: adminUser };
-        });
-
-        try {
-            await this.emailService.sendAdminCredentials(
-                cooperative.email,
-                dto.adminFirstName,
-                cooperative.name,
-                dto.adminEmail,
-                dto.adminPassword
-            );
-        } catch (e) {
-            console.error('Failed to send admin credentials email:', e);
+        if (!cooperative) {
+            console.error(`[CooperativesService.approve] Cooperative ${id} not found`);
+            throw new NotFoundException('Cooperative not found');
+        }
+        if (cooperative.status !== 'PENDING') {
+            console.warn(`[CooperativesService.approve] Cooperative ${id} is not PENDING. Status: ${cooperative.status}`);
+            throw new BadRequestException('Cooperative is not in pending status');
         }
 
-        return {
-            message: 'Cooperative approved successfully',
-            cooperative: result.cooperative,
-            admin: {
-                id: result.admin.id,
-                email: result.admin.email,
-            },
-        };
+        const existingUser = await this.prisma.user.findUnique({ where: { email: dto.adminEmail } });
+        if (existingUser) {
+            console.error(`[CooperativesService.approve] User with email ${dto.adminEmail} already exists`);
+            throw new BadRequestException('A user with this email already exists');
+        }
+
+        console.log(`[CooperativesService.approve] Hashing password for admin ${dto.adminEmail}`);
+        const hashedPassword = await bcrypt.hash(dto.adminPassword, 10);
+
+        try {
+            console.log(`[CooperativesService.approve] Starting transaction for coop ${id}`);
+            const result = await this.prisma.$transaction(async (tx) => {
+                const updatedCooperative = await tx.cooperative.update({
+                    where: { id },
+                    data: {
+                        status: 'APPROVED',
+                        verifiedBy: adminId,
+                        verifiedAt: new Date(),
+                    },
+                });
+
+                const adminUser = await tx.user.create({
+                    data: {
+                        email: dto.adminEmail,
+                        password: hashedPassword,
+                        firstName: dto.adminFirstName,
+                        lastName: dto.adminLastName,
+                        role: UserRole.COOP_ADMIN,
+                        cooperativeId: id,
+                        isActive: true,
+                        emailVerified: true,
+                    },
+                });
+
+                await tx.activityLog.create({
+                    data: {
+                        userId: adminId,
+                        cooperativeId: id,
+                        action: 'COOPERATIVE_APPROVED',
+                        entity: 'COOPERATIVE',
+                        entityId: id,
+                    },
+                });
+
+                return { cooperative: updatedCooperative, admin: adminUser };
+            });
+
+            console.log(`[CooperativesService.approve] Transaction successful for coop ${id}`);
+
+            try {
+                console.log(`[CooperativesService.approve] Sending credentials to ${dto.adminEmail}`);
+                await this.emailService.sendAdminCredentials(
+                    cooperative.email,
+                    dto.adminFirstName,
+                    cooperative.name,
+                    dto.adminEmail,
+                    dto.adminPassword
+                );
+            } catch (e) {
+                console.error('[CooperativesService.approve] Failed to send admin credentials email:', e);
+            }
+
+            return {
+                message: 'Cooperative approved successfully',
+                cooperative: result.cooperative,
+                admin: {
+                    id: result.admin.id,
+                    email: result.admin.email,
+                },
+            };
+        } catch (error: any) {
+            console.error(`[CooperativesService.approve] Error during approval of coop ${id}:`, error);
+            throw error;
+        }
     }
 
     async createAdmin(id: string, dto: CreateCooperativeAdminDto, superAdminId: string) {
