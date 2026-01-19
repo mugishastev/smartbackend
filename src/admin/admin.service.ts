@@ -198,7 +198,7 @@ export class AdminService {
       'Rutsiro': 'Western',
     };
 
-    const cooperativesByRegionData = (cooperativesByRegion as any[]).reduce((acc: { [key: string]: number }, group: any) => {
+    const cooperativesByRegionData = (Array.isArray(cooperativesByRegion) ? cooperativesByRegion : [] as any[]).reduce((acc: { [key: string]: number }, group: any) => {
       const district = group.district as string;
       const region = regionMapping[district] || 'Other';
       if (!acc[region]) {
@@ -224,7 +224,7 @@ export class AdminService {
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const monthName = monthNames[date.getMonth()];
 
-      const matchingData = (monthlyRevenue as any[]).find((item: any) => {
+      const matchingData = (Array.isArray(monthlyRevenue) ? monthlyRevenue : [] as any[]).find((item: any) => {
         const itemDate = new Date(item.month);
         return `${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}` === monthKey;
       });
@@ -253,7 +253,7 @@ export class AdminService {
 
     const analytics = {
       totalCooperatives,
-      cooperativesByStatus: cooperativesByStatus.reduce((acc: { [key in CooperativeStatus]: number }, group: any) => {
+      cooperativesByStatus: (Array.isArray(cooperativesByStatus) ? cooperativesByStatus : []).reduce((acc: { [key in CooperativeStatus]: number }, group: any) => {
         if (typeof group._count === 'object' && group._count !== null) {
           const count = group._count.status;
           const status = group.status as CooperativeStatus;
@@ -283,9 +283,14 @@ export class AdminService {
       })),
     };
 
+    const pendingGroup = (Array.isArray(cooperativesByStatus) ? cooperativesByStatus : []).find((g: any) => g.status === 'PENDING');
+    const pendingCount = pendingGroup && typeof pendingGroup._count === 'object' && pendingGroup._count !== null
+      ? (typeof pendingGroup._count.status === 'bigint' ? Number(pendingGroup._count.status) : (pendingGroup._count.status || 0))
+      : 0;
+
     console.log('[AdminService.getDashboardAnalytics] Stats:', JSON.stringify({
       totalCooperatives,
-      pendingCooperatives: (cooperativesByStatus as any[]).find((g: any) => g.status === 'PENDING')?._count?.status || 0
+      pendingCooperatives: pendingCount
     }));
 
     return analytics;
