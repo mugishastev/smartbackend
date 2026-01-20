@@ -20,7 +20,15 @@ export class CreateMemberDto {
     @IsOptional()
     phone?: string;
 
-    @IsEnum(UserRole)
+    @IsString()
     @IsOptional()
     role?: UserRole = UserRole.MEMBER;
+
+    @IsString()
+    @IsOptional()
+    idNumber?: string;
+
+    @IsString()
+    @IsOptional()
+    village?: string;
 }

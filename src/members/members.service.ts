@@ -201,12 +201,16 @@ export class MembersService {
                 newMember = await tx.user.update({
                     where: { id: existingUser.id },
                     data: {
-                        role: dto.role,
+                        firstName: dto.firstName,
+                        lastName: dto.lastName,
+                        role: dto.role || UserRole.MEMBER,
                         cooperativeId,
                         isActive: true,
                         phone: dto.phone,
+                        idNumber: dto.idNumber,
+                        village: dto.village,
                     },
-                    select: { id: true, firstName: true, lastName: true, email: true, role: true },
+                    select: { id: true, firstName: true, lastName: true, email: true, role: true, idNumber: true, village: true },
                 });
             } else {
                 newMember = await tx.user.create({
@@ -216,12 +220,14 @@ export class MembersService {
                         firstName: dto.firstName,
                         lastName: dto.lastName,
                         phone: dto.phone,
-                        role: dto.role!,
+                        role: dto.role || UserRole.MEMBER,
+                        idNumber: dto.idNumber,
+                        village: dto.village,
                         cooperativeId,
                         isActive: true,
                         emailVerified: false,
                     },
-                    select: { id: true, firstName: true, lastName: true, email: true, role: true },
+                    select: { id: true, firstName: true, lastName: true, email: true, role: true, idNumber: true, village: true },
                 });
             }
 
@@ -242,6 +248,18 @@ export class MembersService {
 
             return newMember;
         });
+
+        // Log activity
+        this.prisma.activityLog.create({
+            data: {
+                userId: createdBy,
+                cooperativeId,
+                action: 'MEMBER_CREATED',
+                entity: 'USER',
+                entityId: member.id,
+                details: { email: dto.email, role: member.role },
+            },
+        }).catch(console.error);
 
         // Send credentials if it was a new user or if we want to notify them
         // Logic from legacy inviteMember implies we send credentials.
@@ -298,6 +316,8 @@ export class MembersService {
                     phone: true,
                     role: true,
                     avatar: true,
+                    idNumber: true,
+                    village: true,
                     isActive: true,
                     createdAt: true,
                 },
@@ -388,6 +408,8 @@ export class MembersService {
                 email: true,
                 phone: true,
                 role: true,
+                idNumber: true,
+                village: true,
                 isActive: true,
             },
         });
@@ -606,4 +628,6 @@ export class MembersService {
         await this.prisma.invitation.delete({ where: { id } });
         return { message: 'Invitation cancelled successfully' };
     }
+
 }
+

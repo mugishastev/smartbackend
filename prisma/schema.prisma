@@ -19,6 +19,8 @@ model User {
   lastName         String
   password         String
   phone            String?
+  idNumber         String?
+  village          String?
   role             UserRole
   updatedAt        DateTime      @updatedAt
   activities       ActivityLog[]
