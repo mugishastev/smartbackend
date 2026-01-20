@@ -21,5 +21,9 @@ export class MemberQueryDto {
 
     @IsString()
     @IsOptional()
+    cooperativeId?: string;
+
+    @IsString()
+    @IsOptional()
     search?: string;
 }
