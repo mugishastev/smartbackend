@@ -145,6 +145,12 @@ export class AuthService {
       cooperativeId: user.cooperativeId,
     });
 
+    // Update last login timestamp
+    this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    }).catch(console.error);
+
     // Fire and forget logging
     this.prisma.activityLog.create({
       data: {
@@ -239,6 +245,15 @@ export class AuthService {
           },
         },
         createdAt: true,
+        // User Settings
+        twoFactorEnabled: true,
+        lastLogin: true,
+        language: true,
+        theme: true,
+        timeZone: true,
+        dateFormat: true,
+        currency: true,
+        notificationSettings: true,
       },
     });
 
@@ -250,13 +265,22 @@ export class AuthService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const updateData: any = {};
+
+    // Only update fields that are provided
+    if (dto.firstName !== undefined) updateData.firstName = dto.firstName;
+    if (dto.lastName !== undefined) updateData.lastName = dto.lastName;
+    if (dto.phone !== undefined) updateData.phone = dto.phone;
+    if (dto.language !== undefined) updateData.language = dto.language;
+    if (dto.theme !== undefined) updateData.theme = dto.theme;
+    if (dto.timeZone !== undefined) updateData.timeZone = dto.timeZone;
+    if (dto.dateFormat !== undefined) updateData.dateFormat = dto.dateFormat;
+    if (dto.currency !== undefined) updateData.currency = dto.currency;
+    if (dto.notificationSettings !== undefined) updateData.notificationSettings = dto.notificationSettings;
+
     const user = await this.prisma.user.update({
       where: { id: userId },
-      data: {
-        firstName: dto.firstName,
-        lastName: dto.lastName,
-        phone: dto.phone,
-      },
+      data: updateData,
       select: {
         id: true,
         email: true,
@@ -265,6 +289,12 @@ export class AuthService {
         phone: true,
         role: true,
         avatar: true,
+        language: true,
+        theme: true,
+        timeZone: true,
+        dateFormat: true,
+        currency: true,
+        notificationSettings: true,
       },
     });
 

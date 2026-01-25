@@ -23,6 +23,19 @@ model User {
   village          String?
   role             UserRole
   updatedAt        DateTime      @updatedAt
+  
+  // User Settings & Preferences
+  twoFactorEnabled Boolean       @default(false)
+  twoFactorSecret  String?
+  lastLogin        DateTime?
+  language         String        @default("en")
+  theme            String        @default("light")
+  timeZone         String        @default("Africa/Kigali")
+  dateFormat       String        @default("DD/MM/YYYY")
+  currency         String        @default("RWF")
+  notificationSettings Json?
+  
+  // Relations
   activities       ActivityLog[]
   approvals        Approval[]
   receivedMessages Message[]     @relation("MessageReceiver")
@@ -694,4 +707,42 @@ enum ReturnStatus {
   REFUNDED
   CANCELLED
   PROCESSING
+}
+
+// Platform Configuration Models (Super Admin)
+model SystemSettings {
+  id                String   @id @default(uuid())
+  platformName      String   @default("Smart Cooperative Hub")
+  platformLogo      String?
+  defaultLanguage   String   @default("en")
+  maintenanceMode   Boolean  @default(false)
+  maintenanceMessage String?
+  apiKeys           Json?
+  brandingConfig    Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CooperativeConfig {
+  id                    String   @id @default(uuid())
+  autoApprovalEnabled   Boolean  @default(false)
+  requiredDocuments     String[] @default(["certificate", "constitution"])
+  minMembers            Int      @default(10)
+  maxMembers            Int?
+  registrationFee       Float    @default(0)
+  approvalWorkflow      Json?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model FinancialConfig {
+  id                  String   @id @default(uuid())
+  platformFeePercent  Float    @default(0)
+  commissionRate      Float    @default(0)
+  minTransactionLimit Float    @default(0)
+  maxTransactionLimit Float?
+  payoutRules         Json?
+  paymentMethods      String[] @default(["MTN_MOBILE_MONEY", "AIRTEL_MOBILE_MONEY", "BANK_TRANSFER"])
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MinLength } from 'class-validator';
+import { IsOptional, IsString, MinLength, IsBoolean, IsJSON } from 'class-validator';
 
 export class UpdateProfileDto {
     @IsString()
@@ -14,4 +14,28 @@ export class UpdateProfileDto {
     @IsString()
     @IsOptional()
     phone?: string;
+
+    // User Preferences
+    @IsString()
+    @IsOptional()
+    language?: string;
+
+    @IsString()
+    @IsOptional()
+    theme?: string;
+
+    @IsString()
+    @IsOptional()
+    timeZone?: string;
+
+    @IsString()
+    @IsOptional()
+    dateFormat?: string;
+
+    @IsString()
+    @IsOptional()
+    currency?: string;
+
+    @IsOptional()
+    notificationSettings?: any;
 }
