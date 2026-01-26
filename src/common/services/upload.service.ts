@@ -62,6 +62,7 @@ export class UploadService {
           folder,
           resource_type: 'auto',
           format: 'pdf',
+          access_mode: 'public',
         },
         (error, result: UploadApiResponse | undefined) => {
           if (error) {

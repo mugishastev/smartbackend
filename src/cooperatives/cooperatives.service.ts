@@ -58,6 +58,7 @@ export class CooperativesService {
         const cooperative = await this.prisma.cooperative.create({
             data: {
                 ...dto,
+                foundedDate: dto.foundedDate ? new Date(dto.foundedDate) : undefined,
                 logo,
                 certificateUrl,
                 constitutionUrl,
@@ -125,6 +126,7 @@ export class CooperativesService {
             const cooperative = await tx.cooperative.create({
                 data: {
                     ...dto,
+                    foundedDate: dto.foundedDate ? new Date(dto.foundedDate) : undefined,
                     logo,
                     certificateUrl,
                     constitutionUrl,
