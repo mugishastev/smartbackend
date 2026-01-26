@@ -1,6 +1,7 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
 import { ContactsService } from './contacts.service';
 import { CreateContactDto } from './dto/create-contact.dto';
+import { ContactQueryDto } from './dto/contact-query.dto';
 
 @Controller('contacts')
 export class ContactsController {
@@ -12,8 +13,8 @@ export class ContactsController {
     }
 
     @Get()
-    findAll() {
-        return this.contactsService.findAll();
+    findAll(@Query() query: ContactQueryDto) {
+        return this.contactsService.findAll(query);
     }
 
     @Get(':id')
