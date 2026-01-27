@@ -12,6 +12,8 @@ interface CSVMember {
   lastName: string;
   email: string;
   phone?: string;
+  idNumber?: string;
+  village?: string;
   role: 'MEMBER' | 'SECRETARY' | 'ACCOUNTANT';
 }
 
@@ -40,11 +42,13 @@ export class CSVService {
         .on('data', (data) => {
           // Map CSV columns to our structure
           const member: CSVMember = {
-            firstName: data.first_name || data.firstname || '',
-            lastName: data.last_name || data.lastname || '',
-            email: data.email || '',
-            phone: data.phone || data.phone_number || '',
-            role: (data.role?.toUpperCase() || 'MEMBER') as CSVMember['role'],
+            firstName: (data.first_name || data.firstname || '').trim(),
+            lastName: (data.last_name || data.lastname || '').trim(),
+            email: (data.email || '').trim(),
+            phone: (data.phone || data.phone_number || '').trim(),
+            idNumber: (data.id_number || data.idnumber || data.id_no || '').trim(),
+            village: (data.village || data.location || '').trim(),
+            role: (data.role?.trim().toUpperCase() || 'MEMBER') as CSVMember['role'],
           };
 
           // Validate required fields
@@ -112,38 +116,66 @@ export class CSVService {
           }
         }
 
-        // Generate invitation token
-        const token = crypto.randomBytes(32).toString('hex');
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
+        // Generate a temporary password
+        const tempPassword = crypto.randomBytes(8).toString('hex');
+        const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
-        // Create invitation
-        await this.prisma.invitation.create({
-          data: {
-            email: member.email,
-            cooperativeId,
-            role: member.role,
-            token,
-            expiresAt,
-            invitedBy,
-          },
+        // Create member account directly
+        const newMember = await this.prisma.$transaction(async (tx) => {
+          const user = await tx.user.create({
+            data: {
+              email: member.email,
+              password: hashedPassword,
+              firstName: member.firstName,
+              lastName: member.lastName,
+              phone: member.phone,
+              idNumber: member.idNumber,
+              village: member.village,
+              role: member.role,
+              cooperativeId,
+              isActive: true,
+              emailVerified: false,
+            },
+          });
+
+          if (member.role === 'MEMBER') {
+            await tx.memberFinancial.create({
+              data: {
+                memberId: user.id,
+                cooperativeId,
+              },
+            });
+          }
+
+          await tx.cooperative.update({
+            where: { id: cooperativeId },
+            data: { totalMembers: { increment: 1 } },
+          });
+
+          return user;
         });
 
-        // Send invitation email
-        const inviteLink = `${config.frontend.url}/accept-invitation?token=${token}`;
-        await this.emailService.sendInvitationEmail(
-          member.email,
-          cooperative.name,
-          member.role,
-          inviteLink
-        );
+        // Send credentials email
+        try {
+          await this.emailService.sendMemberCredentials(
+            member.email,
+            member.firstName,
+            cooperative.name,
+            member.email,
+            tempPassword,
+            member.role
+          );
+        } catch (emailErr) {
+          console.error(`Failed to send credentials to ${member.email}`, emailErr);
+          // Don't fail the whole row just because email failed
+        }
 
         result.success++;
       } catch (error: any) {
         result.errors.push({
           row: i + 2,
           email: member.email,
-          error: error.message || 'Failed to create invitation',
+          error: error.message || 'Failed to create member',
         });
         result.failed++;
       }
