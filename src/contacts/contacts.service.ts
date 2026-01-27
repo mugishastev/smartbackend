@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { EmailService } from '../common/services/email.service';
@@ -62,5 +62,38 @@ export class ContactsService {
         return this.prisma.contact.findUnique({
             where: { id },
         });
+    }
+
+    async respond(id: string, response: string) {
+        const contact = await this.prisma.contact.findUnique({
+            where: { id },
+        });
+
+        if (!contact) {
+            throw new NotFoundException('Contact inquiry not found');
+        }
+
+        const updatedContact = await this.prisma.contact.update({
+            where: { id },
+            data: {
+                response,
+                status: 'RESPONDED',
+                respondedAt: new Date(),
+            },
+        });
+
+        try {
+            await this.emailService.sendContactResponseEmail(
+                contact.email,
+                contact.name,
+                contact.message,
+                response,
+                'Super Admin'
+            );
+        } catch (error) {
+            console.error('Failed to send contact response email:', error);
+        }
+
+        return updatedContact;
     }
 }
